@@ -1,0 +1,29 @@
+image:
+  tag: "480"
+
+additionalConfigProperties:
+  - http-server.process-forwarded=true
+
+envFrom:
+  - secretRef:
+      name: trino-adls-credentials
+
+coordinator:
+  replicas: 1
+  resources:
+    requests:
+      cpu: "1"
+      memory: "2Gi"
+    limits:
+      cpu: "2"
+      memory: "4Gi"
+
+worker:
+  replicas: 2
+  resources:
+    requests:
+      cpu: "1"
+      memory: "2Gi"
+    limits:
+      cpu: "2"
+      memory: "4Gi"

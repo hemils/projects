@@ -1,0 +1,138 @@
+apiVersion: apps/v1
+kind: Deployment
+metadata:
+  name: hive-metastore
+spec:
+  replicas: 1
+  selector:
+    matchLabels:
+      app: hive-metastore
+  template:
+    metadata:
+      labels:
+        app: hive-metastore
+    spec:
+      initContainers:
+        - name: download-postgres-jdbc
+          image: curlimages/curl:8.12.1
+          command:
+            - sh
+            - -ec
+            - >-
+              curl --fail --location --silent --show-error --retry 5
+              --output /jdbc/postgresql.jar
+              https://repo1.maven.org/maven2/org/postgresql/postgresql/42.7.5/postgresql-42.7.5.jar
+          volumeMounts:
+            - name: hive-jdbc
+              mountPath: /jdbc
+        - name: render-hive-config
+          image: python:3.12-alpine
+          command:
+            - python
+            - -c
+            - |
+              import os
+              import xml.etree.ElementTree as ET
+
+              root = ET.Element("configuration")
+              properties = {
+                  "javax.jdo.option.ConnectionURL": f"jdbc:postgresql://{os.environ['DB_HOST']}:{os.environ['DB_PORT']}/{os.environ['DB_NAME']}",
+                  "javax.jdo.option.ConnectionDriverName": "org.postgresql.Driver",
+                  "javax.jdo.option.ConnectionUserName": os.environ["DB_USER"],
+                  "javax.jdo.option.ConnectionPassword": os.environ["DB_PASSWORD"],
+                  "datanucleus.autoCreateSchema": "false",
+                  "hive.metastore.schema.verification": "true",
+                  "hive.metastore.warehouse.dir": "file:///tmp/hive/warehouse",
+              }
+              for name, value in properties.items():
+                  prop = ET.SubElement(root, "property")
+                  ET.SubElement(prop, "name").text = name
+                  ET.SubElement(prop, "value").text = value
+              ET.ElementTree(root).write("/conf/hive-site.xml", encoding="utf-8", xml_declaration=True)
+          envFrom:
+            - secretRef:
+                name: hive-metastore-db-secret
+          volumeMounts:
+            - name: hive-conf
+              mountPath: /conf
+        - name: initialize-metastore-schema
+          image: apache/hive:4.0.1
+          command:
+            - sh
+            - -ec
+            - |
+              if /opt/hive/bin/schematool -dbType postgres -info; then
+                echo "Hive Metastore schema is already initialized"
+              else
+                /opt/hive/bin/schematool \
+                  -dbType postgres \
+                  -initSchema \
+                  -userName "$DB_USER" \
+                  -passWord "$DB_PASSWORD" \
+                  -url "jdbc:postgresql://$DB_HOST:$DB_PORT/$DB_NAME"
+              fi
+          envFrom:
+            - secretRef:
+                name: hive-metastore-db-secret
+          volumeMounts:
+            - name: hive-jdbc
+              mountPath: /opt/hive/lib/postgresql.jar
+              subPath: postgresql.jar
+              readOnly: true
+            - name: hive-conf
+              mountPath: /opt/hive/conf/hive-site.xml
+              subPath: hive-site.xml
+              readOnly: true
+      containers:
+        - name: hive-metastore
+          image: apache/hive:4.0.1
+          command: ["/opt/hive/bin/hive"]
+          args:
+            - --skiphadoopversion
+            - --skiphbasecp
+            - --service
+            - metastore
+          ports:
+            - name: thrift
+              containerPort: 9083
+          envFrom:
+            - secretRef:
+                name: hive-metastore-db-secret
+          readinessProbe:
+            tcpSocket:
+              port: thrift
+            initialDelaySeconds: 10
+            periodSeconds: 10
+          livenessProbe:
+            tcpSocket:
+              port: thrift
+            initialDelaySeconds: 30
+            periodSeconds: 20
+          volumeMounts:
+            - name: hive-jdbc
+              mountPath: /opt/hive/lib/postgresql.jar
+              subPath: postgresql.jar
+              readOnly: true
+            - name: hive-conf
+              mountPath: /opt/hive/conf/hive-site.xml
+              subPath: hive-site.xml
+              readOnly: true
+      volumes:
+        - name: hive-jdbc
+          emptyDir: {}
+        - name: hive-conf
+          emptyDir: {}
+---
+apiVersion: v1
+kind: Service
+metadata:
+  name: hive-metastore
+spec:
+  selector:
+    app: hive-metastore
+  ports:
+    - name: thrift
+      protocol: TCP
+      port: 9083
+      targetPort: thrift
+  type: ClusterIP

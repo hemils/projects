@@ -1,0 +1,6 @@
+additionalConfigProperties:
+	- http-server.process-forwarded=true
+
+envFrom:
+	- secretRef:
+			name: trino-adls-credentials

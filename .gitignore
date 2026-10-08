@@ -1,0 +1,14 @@
+# Local environment variables and credentials
+.env
+.env.*
+!.env.example
+
+# Generated Python environments and artifacts
+**/.venv/
+**/venv/
+**/__pycache__/
+**/.pytest_cache/
+
+# Generated notebook state and OS metadata
+**/.ipynb_checkpoints/
+.DS_Store

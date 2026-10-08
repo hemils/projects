@@ -1,0 +1,44 @@
+replicaCount: 1
+
+config:
+  serverConfig:
+    node.environment: local
+    http-server.http.enabled: true
+    http-server.http.port: 8080
+  dataStore:
+    # Credentials are overridden at install time from the existing
+    # hive-metastore-db-secret in the default namespace.
+    jdbcUrl: jdbc:postgresql://host.docker.internal:5432/trinodb
+    user: hiveuser
+    password: replace-at-deploy-time
+    driver: org.postgresql.Driver
+    queryHistoryEnabled: false
+  clusterStatsConfiguration:
+    monitorType: INFO_API
+  routing:
+    defaultRoutingGroup: adhoc
+  requestAnalyzerConfig:
+    analyzeRequest: true
+  routingRules:
+    # Set true and replace urlPath when the routing REST API is available.
+    rulesEngineEnabled: false
+    rulesType: EXTERNAL
+    rulesExternalConfiguration:
+      urlPath: http://routing-api.default.svc.cluster.local:8080/route
+      excludeHeaders:
+        - Authorization
+      propagateErrors: true
+
+service:
+  type: ClusterIP
+  ports:
+    - protocol: TCP
+      name: gateway
+
+resources:
+  requests:
+    cpu: 250m
+    memory: 768Mi
+  limits:
+    cpu: "1"
+    memory: 1536Mi

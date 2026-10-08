@@ -1,5 +1,6 @@
 import kagglehub
 
+# function is failing to download, with an error Resource not found.
 def extract_customer_churn_kaggle_data(dataset_name, download_path):
 
     path = kagglehub.dataset_download(dataset_name, download_path)
