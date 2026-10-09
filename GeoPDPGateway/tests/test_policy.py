@@ -1,25 +1,25 @@
 from pdp.policy import CatalogPolicy, decide
 
 
-def test_trades_raw_allowed_from_us_and_routes_to_georestricted() -> None:
+def test_trades_raw_allowed_from_us_and_selects_georestricted_cluster() -> None:
     result = decide(subject="poc-user", location="US", catalogs={"trades_raw"})
 
     assert result.permit is True
-    assert result.routing_group == "georestricted"
+    assert result.cluster_name == "georestricted"
 
 
 def test_trades_raw_denied_from_uk() -> None:
     result = decide(subject="poc-user", location="UK", catalogs={"trades_raw"})
 
     assert result.permit is False
-    assert result.routing_group is None
+    assert result.cluster_name is None
 
 
-def test_tpch_allowed_from_any_configured_region_and_routes_to_base() -> None:
+def test_tpch_allowed_from_any_configured_region_and_selects_unrestricted_cluster() -> None:
     result = decide(subject="poc-user", location="UK", catalogs={"tpch"})
 
     assert result.permit is True
-    assert result.routing_group == "adhoc"
+    assert result.cluster_name == "unrestricted"
 
 
 def test_unknown_or_multiple_catalogs_are_denied() -> None:
@@ -44,10 +44,10 @@ def test_policy_uses_metadata_for_catalogs_not_hard_coded_catalog_branches() -> 
         catalog_policies={
             "finance": CatalogPolicy(
                 allowed_locations=frozenset({"UK"}),
-                routing_group="uk-data",
+                cluster_name="uk-data",
             )
         },
     )
 
     assert result.permit is True
-    assert result.routing_group == "uk-data"
+    assert result.cluster_name == "uk-data"

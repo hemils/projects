@@ -1,8 +1,8 @@
 """Small, deterministic catalog/location policy for the POC.
 
-This module is deliberately independent of FastAPI and Trino Gateway. Replace
-``decide`` with a Rego/OPA or remote-PDP adapter later without changing the
-Gateway-facing API contract.
+This module is independent of FastAPI and Trino Gateway. It returns a policy
+cluster name; the application resolves that name against Gateway's backend
+inventory.
 """
 
 from dataclasses import dataclass
@@ -11,31 +11,31 @@ from collections.abc import Mapping
 
 @dataclass(frozen=True)
 class CatalogPolicy:
-    """Static policy metadata describing where a catalog can be accessed."""
+    """Static policy metadata describing its eligible cluster."""
 
     allowed_locations: frozenset[str] | None
-    routing_group: str
+    cluster_name: str
 
 
 # ``None`` means every non-empty configured location is allowed.
 CATALOG_POLICIES: dict[str, CatalogPolicy] = {
     "trades_raw": CatalogPolicy(
         allowed_locations=frozenset({"US"}),
-        routing_group="georestricted",
+        cluster_name="georestricted",
     ),
     "tpch": CatalogPolicy(
         allowed_locations=None,
-        routing_group="adhoc",
+        cluster_name="unrestricted",
     ),
 }
 
 
 @dataclass(frozen=True)
 class PolicyDecision:
-    """Policy result consumed by the Gateway-facing REST adapter."""
+    """Policy result consumed by the query-routing application."""
 
     permit: bool
-    routing_group: str | None
+    cluster_name: str | None
     reason: str
 
 
@@ -79,4 +79,4 @@ def decide(
         if normalized_location not in allowed_locations:
             return PolicyDecision(False, None, f"Location {normalized_location} is not permitted for catalog {catalog}")
 
-    return PolicyDecision(True, metadata.routing_group, f"Catalog {catalog} is permitted from {normalized_location}")
+    return PolicyDecision(True, metadata.cluster_name, f"Catalog {catalog} is permitted from {normalized_location}")

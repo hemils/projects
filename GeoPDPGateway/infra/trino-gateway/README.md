@@ -61,20 +61,20 @@ curl -X POST http://localhost:9093/gateway/backend/modify/add \
 ## Local policy/routing POC
 
 See the [trinoGateway run guide](../../trinoGateway/README.md) for dependency
-installation, the Uvicorn startup command, and sample API calls. The independent
-metadata-driven PDP policy is in `pdp/`: it allows `trades_raw` only from `US`
-and routes it to `georestricted`, while `tpch` is allowed from any configured
-location and routed to `adhoc`. Denials use the external selector's `errors`
-response field.
+installation, the Uvicorn startup command, and sample API calls. The
+metadata-driven PDP policy in `pdp/` allows `trades_raw` only from `US` and
+returns policy cluster `georestricted`, while `tpch` is allowed from any
+configured location and returns policy cluster `unrestricted`. The FastAPI
+query API reads `/gateway/backend/all`, maps those policy names to backend
+names (`georestricted` and `base` by default), then connects to the selected
+backend's `proxyTo` coordinator URL. Its response includes the backend's
+routing group.
 
-The current Helm values enable request analysis but leave
-`routingRules.rulesEngineEnabled` false. They also contain a placeholder
-in-cluster URL. This POC currently runs locally and is not packaged/deployed as
-a Kubernetes service, so the Gateway pod cannot reach the adapter at that
-placeholder address. Before integration, deploy or otherwise expose the API at
-a URL reachable by the Gateway, enable the external rules engine, and verify
-deny/error propagation against the exact Gateway version. Do not rely on
-client-provided routing headers.
+The current Helm values leave `routingRules.rulesEngineEnabled` false. Keep it
+disabled: `/route` now accepts client SQL and executes it; it does not implement
+the Gateway external-selector callback contract. Deploy the API where it can
+reach both the Gateway management API and coordinator URLs before using it. Do
+not rely on client-provided routing headers.
 
 See the repository-root [POC limitations](../../POC_LIMITATIONS.md) for the
 scope, security caveats, and follow-up requirements. This routing demo is not
@@ -82,8 +82,8 @@ an authorization boundary.
 
 ## Important security limitation
 
-This is routing, not an authorization boundary. In particular, Gateway's
-external-selector fallback behavior and client-supplied routing headers must not
+This is routing, not an authorization boundary. Direct coordinator connections
+can bypass Gateway's query proxy, and client-supplied routing headers must not
 be relied on to enforce data sovereignty. Before using real restricted data,
 authenticate the location claim, fail closed when the policy service is
 unavailable, and enforce the same access decision in Trino access control (or

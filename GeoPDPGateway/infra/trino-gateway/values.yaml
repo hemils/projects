@@ -20,7 +20,7 @@ config:
   requestAnalyzerConfig:
     analyzeRequest: true
   routingRules:
-    # Set true and replace urlPath when the routing REST API is available.
+    # Keep disabled: the POC /route API accepts SQL and is not an external-selector callback.
     rulesEngineEnabled: false
     rulesType: EXTERNAL
     rulesExternalConfiguration:
