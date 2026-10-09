@@ -8,6 +8,7 @@ For this POC, cluster identifiers such as `georestricted` and `unrestricted` rep
 
 ## POC behavior
 
+- Requests currently use the server-configured POC user (`poc-user` by default), rather than an authenticated identity resolved for each caller.
 - `trades_raw` selects the `georestricted` cluster identifier when the configured location is `US`.
 - `tpch` selects the `unrestricted` cluster identifier for any configured location.
 - The API resolves the selected identifier to a Trino Gateway backend and executes the query against its configured coordinator.
