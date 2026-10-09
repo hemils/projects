@@ -46,11 +46,12 @@ def decide(
     catalogs: set[str],
     catalog_policies: Mapping[str, CatalogPolicy] = CATALOG_POLICIES,
 ) -> PolicyDecision:
-    """Decide access for one catalog using a server-configured POC context.
+    """Decide access for one catalog using an authenticated policy context.
 
-    ``location`` is supplied by the service configuration, never by request
-    headers. Queries referencing zero or multiple catalogs are denied for this
-    first milestone so an incomplete catalog classification cannot grant access.
+    The caller must provide identity and location only after validating their
+    trusted source (OIDC claims in this POC); never pass unverified request
+    headers. Queries referencing zero or multiple catalogs are denied so
+    incomplete catalog classification cannot grant access.
     """
 
     if not subject.strip():

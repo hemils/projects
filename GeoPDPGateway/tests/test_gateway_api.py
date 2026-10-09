@@ -1,141 +1,226 @@
 from typing import Any
 
-import httpx
 from fastapi.testclient import TestClient
 
-from trinoGateway import app as gateway_app
+from pdp.identity import AuthenticatedIdentity, IdentityTokenError
 from trinoGateway.app import create_app
 
 
-class FakeCursor:
-    description = [("customer_id",), ("name",)]
-
-    def execute(self, query: str) -> None:
-        self.query = query
-
-    def fetchall(self) -> list[list[Any]]:
-        return [[1, "Ada"]]
-
-    def close(self) -> None:
-        pass
+def make_app(**kwargs: Any):
+    kwargs.setdefault("trino_oauth_enforced", True)
+    return create_app(**kwargs)
 
 
-class FakeConnection:
-    def __init__(self) -> None:
-        self.fake_cursor = FakeCursor()
-
-    def cursor(self) -> FakeCursor:
-        return self.fake_cursor
-
-    def close(self) -> None:
-        pass
-
-
-def install_trino_mocks(monkeypatch: Any) -> dict[str, Any]:
-    fake_connection = FakeConnection()
-    connect_arguments: dict[str, Any] = {}
-
-    def connect(**kwargs: Any) -> FakeConnection:
-        connect_arguments.update(kwargs)
-        return fake_connection
-
-    monkeypatch.setattr("trino.dbapi.connect", connect)
-    return {"connection": fake_connection, "connect_arguments": connect_arguments}
+def gateway_request(catalogs: list[str], *, parsed: bool = True) -> dict[str, Any]:
+    return {
+        "trinoQueryProperties": {
+            "catalogs": catalogs,
+            "isQueryParsingSuccessful": parsed,
+        },
+        "requestURI": "/v1/statement",
+        "method": "POST",
+    }
 
 
-def install_gateway_inventory_mock(monkeypatch: Any, *, routing_group: str) -> None:
-    response = httpx.Response(
-        200,
-        request=httpx.Request("GET", "http://gateway/gateway/backend/all"),
-        json=[
-            {
-                "name": "georestricted",
-                "proxyTo": "http://restricted-coordinator:8080",
-                "active": True,
-                "routingGroup": routing_group,
-            },
-            {
-                "name": "base",
-                "proxyTo": "http://base-coordinator:8080",
-                "active": True,
-                "routingGroup": "adhoc",
-            },
-        ],
+def test_verified_us_identity_routes_restricted_catalog_to_georestricted() -> None:
+    seen_tokens: list[str] = []
+
+    def verify(token: str) -> AuthenticatedIdentity:
+        seen_tokens.append(token)
+        return AuthenticatedIdentity(subject="entra-user-object-id", location="US")
+
+    client = TestClient(make_app(token_verifier=verify))
+    response = client.post(
+        "/gateway-rules",
+        json=gateway_request(["trades_raw"]),
+        headers={"Authorization": "Bearer signed-access-token"},
     )
-    monkeypatch.setattr(gateway_app.httpx, "get", lambda *args, **kwargs: response)
-
-
-def test_query_catalog_routes_through_resolved_georestricted_backend(monkeypatch: Any) -> None:
-    trino_mocks = install_trino_mocks(monkeypatch)
-    install_gateway_inventory_mock(monkeypatch, routing_group="geo-group")
-    client = TestClient(create_app(poc_user="poc-user", poc_location="US"))
-
-    response = client.post("/route", json={"query": "select * from trades_raw.market.trades"})
 
     assert response.status_code == 200
     assert response.json() == {
-        "cluster": "georestricted",
-        "routing_group": "geo-group",
-        "columns": ["customer_id", "name"],
-        "data": [[1, "Ada"]],
+        "routingGroup": "georestricted",
+        "errors": [],
+        "externalHeaders": {},
     }
-    assert trino_mocks["connect_arguments"] == {
-        "host": "restricted-coordinator",
-        "port": 8080,
-        "user": "poc-user",
-        "http_scheme": "http",
-        "catalog": "trades_raw",
-    }
+    assert seen_tokens == ["signed-access-token"]
 
 
-def test_query_catalog_routes_tpch_to_unrestricted_backend(monkeypatch: Any) -> None:
-    install_trino_mocks(monkeypatch)
-    install_gateway_inventory_mock(monkeypatch, routing_group="adhoc")
-    client = TestClient(create_app(poc_user="poc-user", poc_location="UK"))
-
-    response = client.post("/route", json={"query": "select * from tpch.sf1.customer"})
-
-    assert response.status_code == 200
-    assert response.json()["cluster"] == "unrestricted"
-    assert response.json()["routing_group"] == "adhoc"
-
-
-def test_trades_raw_is_denied_from_uk_before_backend_lookup(monkeypatch: Any) -> None:
-    def unexpected_lookup(*args: Any, **kwargs: Any) -> None:
-        raise AssertionError("policy denial must happen before backend lookup")
-
-    monkeypatch.setattr(gateway_app.httpx, "get", unexpected_lookup)
-    client = TestClient(create_app(poc_user="poc-user", poc_location="UK"))
-
-    response = client.post("/route", json={"query": "select * from trades_raw.market.trades"})
-
-    assert response.status_code == 403
-
-
-def test_query_without_catalog_qualified_table_is_rejected() -> None:
-    client = TestClient(create_app(poc_user="poc-user", poc_location="US"))
-
-    response = client.post("/route", json={"query": "select 1"})
-
-    assert response.status_code == 400
-
-
-def test_query_referencing_multiple_catalogs_is_denied() -> None:
-    client = TestClient(create_app(poc_user="poc-user", poc_location="US"))
+def test_verified_uk_identity_is_denied_for_restricted_catalog() -> None:
+    client = TestClient(
+        make_app(
+            token_verifier=lambda _: AuthenticatedIdentity(
+                subject="entra-user-object-id", location="UK"
+            )
+        )
+    )
 
     response = client.post(
-        "/route",
-        json={
-            "query": "select * from tpch.sf1.customer join trades_raw.market.trades on true"
+        "/gateway-rules",
+        json=gateway_request(["trades_raw"]),
+        headers={"Authorization": "Bearer token"},
+    )
+
+    assert response.status_code == 200
+    assert response.json()["routingGroup"] is None
+    assert response.json()["errors"] == [
+        "Request denied by identity-aware routing policy"
+    ]
+
+
+def test_uk_identity_routes_unrestricted_catalog_to_adhoc() -> None:
+    client = TestClient(
+        make_app(
+            token_verifier=lambda _: AuthenticatedIdentity(
+                subject="entra-user-object-id", location="UK"
+            )
+        )
+    )
+
+    response = client.post(
+        "/gateway-rules",
+        json=gateway_request(["tpch"]),
+        headers={"Authorization": "Bearer token"},
+    )
+
+    assert response.status_code == 200
+    assert response.json()["routingGroup"] == "adhoc"
+    assert response.json()["errors"] == []
+
+
+def test_missing_bearer_token_only_selects_authentication_bootstrap_backend() -> None:
+    def unexpected_verification(_: str) -> AuthenticatedIdentity:
+        raise AssertionError("the selector must not trust or invent an identity")
+
+    client = TestClient(make_app(token_verifier=unexpected_verification))
+
+    response = client.post("/gateway-rules", json=gateway_request(["trades_raw"]))
+
+    assert response.status_code == 200
+    assert response.json()["routingGroup"] == "adhoc"
+    assert response.json()["errors"] == []
+
+
+def test_invalid_token_returns_gateway_error_instead_of_default_route() -> None:
+    def reject(_: str) -> AuthenticatedIdentity:
+        raise IdentityTokenError("bad token")
+
+    client = TestClient(make_app(token_verifier=reject))
+
+    response = client.post(
+        "/gateway-rules",
+        json=gateway_request(["tpch"]),
+        headers={"Authorization": "Bearer invalid"},
+    )
+
+    assert response.json()["routingGroup"] is None
+    assert response.json()["errors"] == [
+        "Access token is invalid or lacks required identity claims"
+    ]
+
+
+def test_identity_provider_failure_returns_gateway_error() -> None:
+    def unavailable(_: str) -> AuthenticatedIdentity:
+        raise RuntimeError("JWKS unavailable")
+
+    client = TestClient(make_app(token_verifier=unavailable))
+
+    response = client.post(
+        "/gateway-rules",
+        json=gateway_request(["tpch"]),
+        headers={"Authorization": "Bearer token"},
+    )
+
+    assert response.json()["routingGroup"] is None
+    assert response.json()["errors"] == [
+        "Identity validation is temporarily unavailable"
+    ]
+
+
+def test_client_supplied_user_and_location_headers_are_not_identity_sources() -> None:
+    client = TestClient(
+        make_app(
+            token_verifier=lambda _: AuthenticatedIdentity(
+                subject="verified-user", location="UK"
+            )
+        )
+    )
+
+    response = client.post(
+        "/gateway-rules",
+        json=gateway_request(["trades_raw"]),
+        headers={
+            "Authorization": "Bearer token",
+            "X-Trino-User": "spoofed-user",
+            "X-User-Location": "US",
         },
     )
 
-    assert response.status_code == 403
+    assert response.json()["routingGroup"] is None
+    assert response.json()["errors"] == [
+        "Request denied by identity-aware routing policy"
+    ]
 
 
-def test_empty_query_is_rejected() -> None:
-    client = TestClient(create_app(poc_user="poc-user", poc_location="US"))
+def test_multiple_catalogs_and_unparsed_queries_are_denied() -> None:
+    client = TestClient(
+        make_app(
+            token_verifier=lambda _: AuthenticatedIdentity(
+                subject="verified-user", location="US"
+            )
+        )
+    )
+    headers = {"Authorization": "Bearer token"}
 
-    response = client.post("/route", json={"query": "  "})
+    multiple = client.post(
+        "/gateway-rules",
+        json=gateway_request(["tpch", "trades_raw"]),
+        headers=headers,
+    )
+    unparsable = client.post(
+        "/gateway-rules",
+        json=gateway_request(["tpch"], parsed=False),
+        headers=headers,
+    )
 
-    assert response.status_code == 400
+    assert multiple.json()["errors"] == [
+        "Request denied by identity-aware routing policy"
+    ]
+    assert unparsable.json()["errors"] == [
+        "Query catalog analysis is missing or unsuccessful"
+    ]
+
+
+def test_oauth_callback_uses_bootstrap_group() -> None:
+    client = TestClient(make_app())
+
+    response = client.post(
+        "/gateway-rules",
+        json={"requestURI": "/oauth2/callback"},
+        headers={"Authorization": "Bearer token"},
+    )
+
+    assert response.json()["routingGroup"] == "adhoc"
+    assert response.json()["errors"] == []
+
+
+def test_legacy_sql_execution_endpoint_is_not_exposed() -> None:
+    client = TestClient(create_app())
+
+    response = client.post("/route", json={"query": "select * from tpch.sf1.customer"})
+
+    assert response.status_code == 404
+
+
+def test_routing_is_closed_until_trino_oauth_is_explicitly_enabled() -> None:
+    client = TestClient(create_app())
+
+    response = client.post(
+        "/gateway-rules",
+        json=gateway_request(["tpch"]),
+        headers={"Authorization": "Bearer token"},
+    )
+
+    assert response.json()["routingGroup"] is None
+    assert response.json()["errors"] == [
+        "Trino OAuth enforcement must be enabled before routing is enabled"
+    ]

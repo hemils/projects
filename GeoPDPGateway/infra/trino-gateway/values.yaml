@@ -5,6 +5,7 @@ config:
     node.environment: local
     http-server.http.enabled: true
     http-server.http.port: 8080
+    http-server.process-forwarded: true
   dataStore:
     # Credentials are overridden at install time from the existing
     # hive-metastore-db-secret in the default namespace.
@@ -20,13 +21,16 @@ config:
   requestAnalyzerConfig:
     analyzeRequest: true
   routingRules:
-    # Keep disabled: the POC /route API accepts SQL and is not an external-selector callback.
+    # Enable only after both Trino coordinators enforce OAUTH2 over trusted HTTPS.
     rulesEngineEnabled: false
     rulesType: EXTERNAL
     rulesExternalConfiguration:
-      urlPath: http://routing-api.default.svc.cluster.local:8080/route
+      urlPath: http://routing-api.default.svc.cluster.local:8080/gateway-rules
+      # The selector validates this bearer token against the configured Entra JWKS.
+      # Gateway still forwards the original token to the selected Trino coordinator.
       excludeHeaders:
-        - Authorization
+        - Cookie
+        - X-Trino-Routing-Group
       propagateErrors: true
 
 service:
