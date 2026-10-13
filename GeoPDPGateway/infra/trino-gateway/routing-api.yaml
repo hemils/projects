@@ -1,0 +1,70 @@
+apiVersion: v1
+kind: ConfigMap
+metadata:
+  name: trino-routing-api-config
+  namespace: default
+data:
+  OIDC_ISSUER: "https://login.microsoftonline.com/24454ef6-5e74-4b73-8910-0d8f3e32d649/v2.0"
+  OIDC_AUDIENCE: "887aa013-8646-4f77-944f-6d0922eabbed"
+  OIDC_JWKS_URL: "https://login.microsoftonline.com/24454ef6-5e74-4b73-8910-0d8f3e32d649/discovery/v2.0/keys"
+  TRINO_OAUTH_ENFORCED: "true"
+  TRINO_OAUTH_BOOTSTRAP_ROUTING_GROUP: "unrestricted"
+---
+apiVersion: apps/v1
+kind: Deployment
+metadata:
+  name: routing-api
+  namespace: default
+spec:
+  replicas: 1
+  selector:
+    matchLabels:
+      app: routing-api
+  template:
+    metadata:
+      labels:
+        app: routing-api
+    spec:
+      containers:
+        - name: routing-api
+          image: geo-pdp-routing-api:dev
+          imagePullPolicy: IfNotPresent
+          ports:
+            - name: http
+              containerPort: 8080
+          envFrom:
+            - configMapRef:
+                name: trino-routing-api-config
+          readinessProbe:
+            httpGet:
+              path: /health
+              port: http
+            initialDelaySeconds: 3
+            periodSeconds: 10
+          livenessProbe:
+            httpGet:
+              path: /health
+              port: http
+            initialDelaySeconds: 10
+            periodSeconds: 20
+          resources:
+            requests:
+              cpu: 100m
+              memory: 128Mi
+            limits:
+              cpu: 500m
+              memory: 512Mi
+---
+apiVersion: v1
+kind: Service
+metadata:
+  name: routing-api
+  namespace: default
+spec:
+  selector:
+    app: routing-api
+  ports:
+    - name: http
+      port: 8080
+      targetPort: http
+  type: ClusterIP

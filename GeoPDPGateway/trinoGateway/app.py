@@ -15,25 +15,6 @@ from pdp.identity import AuthenticatedIdentity, IdentityTokenError, verify_acces
 
 TokenVerifier = Callable[[str], AuthenticatedIdentity]
 
-DEFAULT_POLICY_ROUTING_GROUPS = {
-    "unrestricted": "adhoc",
-    "georestricted": "georestricted",
-}
-
-
-def _configured_routing_groups() -> dict[str, str]:
-    """Map PDP destinations to groups registered with Trino Gateway."""
-    configured = DEFAULT_POLICY_ROUTING_GROUPS.copy()
-    for mapping in os.getenv("TRINO_POLICY_ROUTING_GROUPS", "").split(","):
-        if not mapping.strip():
-            continue
-        policy_cluster, separator, routing_group = mapping.partition("=")
-        if not separator or not policy_cluster.strip() or not routing_group.strip():
-            raise ValueError("TRINO_POLICY_ROUTING_GROUPS must contain comma-separated cluster=group pairs")
-        configured[policy_cluster.strip().lower()] = routing_group.strip()
-    return configured
-
-
 def _external_response(
     *, routing_group: str | None = None, errors: list[str] | None = None
 ) -> dict[str, Any]:
@@ -65,16 +46,11 @@ def _query_catalogs(body: Mapping[str, Any]) -> set[str] | None:
 def create_app(
     *,
     token_verifier: TokenVerifier | None = None,
-    policy_routing_groups: Mapping[str, str] | None = None,
     trino_oauth_enforced: bool | None = None,
 ) -> FastAPI:
     """Build the Gateway callback API; SQL is never executed by this service."""
     verify_token = token_verifier or verify_access_token
-    routing_groups = {
-        key.strip().lower(): value.strip()
-        for key, value in (policy_routing_groups or _configured_routing_groups()).items()
-    }
-    bootstrap_group = os.getenv("TRINO_OAUTH_BOOTSTRAP_ROUTING_GROUP", "adhoc").strip()
+    bootstrap_group = os.getenv("TRINO_OAUTH_BOOTSTRAP_ROUTING_GROUP", "unrestricted").strip()
     oauth_enforced = (
         trino_oauth_enforced
         if trino_oauth_enforced is not None
@@ -93,8 +69,11 @@ def create_app(
         Unauthenticated requests are sent only to the configured bootstrap
         backend so Trino can issue its own OAuth challenge. Trino must be
         configured to require OAUTH2; the selector is not the authenticator.
+        This POC accepts a caller-supplied country header; it is not trusted
+        evidence of the caller's actual location.
         """
         try:
+            print(f"Received request for gateway rules: {request}")
             body = await request.json()
         except Exception:
             return _external_response(errors=["Invalid Gateway selector request"])
@@ -119,11 +98,16 @@ def create_app(
 
         try:
             identity = await run_in_threadpool(verify_token, credential.strip())
-        except IdentityTokenError:
+        except IdentityTokenError as exc:
+            print(f"Token validation failed: {exc} <- {exc.__cause__!r}")
             return _external_response(errors=["Access token is invalid or lacks required identity claims"])
         except Exception:
             # Avoid turning an IdP/JWKS outage into a successful default route.
             return _external_response(errors=["Identity validation is temporarily unavailable"])
+
+        location = request.headers.get("x-poc-user-country", "").strip().upper()
+        if len(location) != 2 or not location.isalpha():
+            return _external_response(errors=["POC country header is missing or invalid"])
 
         catalogs = _query_catalogs(body)
         if catalogs is None:
@@ -131,19 +115,15 @@ def create_app(
 
         decision = decide(
             subject=identity.subject,
-            location=identity.location,
+            location=location,
             catalogs=catalogs,
         )
         if not decision.permit:
             return _external_response(errors=["Request denied by identity-aware routing policy"])
 
-        if decision.cluster_name is None:
+        if decision.routing_group is None:
             return _external_response(errors=["Policy returned no routing destination"])
-        routing_group = routing_groups.get(decision.cluster_name.strip().lower())
-        if routing_group is None:
-            return _external_response(errors=["Policy destination has no Gateway routing group"])
-
-        return _external_response(routing_group=routing_group)
+        return _external_response(routing_group=decision.routing_group)
 
     return app
 

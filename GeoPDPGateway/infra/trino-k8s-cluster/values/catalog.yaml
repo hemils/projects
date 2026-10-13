@@ -11,3 +11,13 @@ catalogs:
     fs.native-azure.enabled=true
     azure.auth-type=ACCESS_KEY
     azure.access-key=${ENV:AZURE_ACCESS_KEY}
+    delta.register-table-procedure.enabled=true
+
+  customer: |
+    connector.name=delta_lake
+    hive.metastore.uri=thrift://hive-metastore:9083
+    fs.native-azure.enabled=true
+    azure.auth-type=ACCESS_KEY
+    azure.access-key=${ENV:AZURE_ACCESS_KEY}
+    delta.register-table-procedure.enabled=true
+

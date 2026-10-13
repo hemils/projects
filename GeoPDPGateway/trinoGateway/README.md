@@ -1,351 +1,161 @@
-# End-to-end identity-aware Trino Gateway POC
+# Identity-aware Trino Gateway POC (local Trino + Microsoft Entra ID)
 
-This runbook describes the intended query path:
+Entra authenticates the user. For this POC, the client explicitly supplies a
+country value to simulate location changes; the selector uses it to choose a
+Gateway routing group. This input is spoofable and is not live-location
+enforcement. See [POC limitations](../POC_LIMITATIONS.md).
 
-1. A user obtains an Entra access token through Trino's OAuth flow.
-2. The Trino client sends SQL and the bearer token to Trino Gateway over HTTPS.
-3. Gateway invokes the FastAPI external selector at `/gateway-rules`.
-4. The selector validates the Entra JWT, reads verified `sub` and location
-   claims, consumes Gateway's analyzed catalog list, and evaluates the PDP.
-5. Gateway selects the returned routing group, proxies the request to that
-   group's coordinator, and pins follow-up requests to the same cluster.
-6. Trino on that coordinator independently validates the same token and runs
-   the query; results return to the client through Gateway.
+```
+client (Entra bearer token) -> Gateway -> routing-api selector (validates token, PDP)
+                                       -> Trino coordinator (validates token again)
+```
 
-The user/client sends SQL to Gateway's Trino protocol endpoint, normally
-`https://<configured-host>/v1/statement` through a Trino driver. It does **not**
-send SQL to `/gateway-rules`; that is an internal Gateway callback. The
-selector never executes SQL.
+## Setup
 
-## Important status: guarded until authentication is configured
+### 1. Register Entra for authentication
 
-This repository has the selector and deployment manifest, but the checked-in
-Trino values still have authentication unset and Gateway's external rules
-engine disabled. This is intentional. **Do not enable routing or send real
-access tokens until both coordinators independently require OAuth and the
-client-to-Gateway path is HTTPS.** You need your tenant ID, Entra application
-registration, registered callback URL, and client secret before completing the
-setup. Do not commit client secrets or bearer tokens.
+1. Entra admin center -> App registrations -> New registration (single tenant).
+   Note the **Application (client) ID** and **Directory (tenant) ID**.
+2. Certificates & secrets -> New client secret. Copy the value securely; do
+   not paste it into this repository. If a secret was committed or shared,
+   revoke it and create a replacement.
+3. Manifest -> set `requestedAccessTokenVersion` (under `api`) to `2`, so tokens
+   have `iss = https://login.microsoftonline.com/<TENANT_ID>/v2.0` and
+   `aud = <APP_CLIENT_ID>`.
+4. Expose an API -> set Application ID URI to `api://<APP_CLIENT_ID>` and add a
+   delegated scope named `access`.
+5. In **Expose an API** -> **Authorized client applications**, add the Azure
+   CLI client `04b07795-8ddb-461a-bbee-02f9e1bf7b46` and select `access`.
 
-## 1. Check local kind and Entra network reachability
+Do not configure Country/Region or app roles for location. Entra supplies the
+verified user identity only; the user sets a simulated country for this POC.
 
-Use an existing kind cluster or create one following your local standard.
-Check the active cluster before changing anything:
+### 2. Set Entra values in the repo
+
+Replace `<TENANT_ID>` and `<APP_CLIENT_ID>`:
+
+- [routing-api.yaml](../infra/trino-gateway/routing-api.yaml): `OIDC_ISSUER`,
+  `OIDC_AUDIENCE`, and `OIDC_JWKS_URL`.
+  Leave `TRINO_OAUTH_ENFORCED: "false"` for now.
+- [oauth2-local.example.yaml](../infra/trino-k8s-cluster/values/oauth2-local.example.yaml):
+  the `issuer` line.
+
+### 3. Deploy the Trino clusters
 
 ```sh
 kubectl config current-context
-kind get clusters
-kubectl get nodes
+bash infra/trino-k8s-cluster/helm/install-trino.sh
+bash infra/trino-restricted/helm/install.sh
 ```
 
-The selector container does not sign in to Entra and needs no Entra client
-secret. It makes outbound HTTPS requests to the configured JWKS endpoint on
-TCP 443 to download signing keys. DNS and egress to
-`login.microsoftonline.com` must work from the pod. Trino also needs outbound
-access to Entra OIDC discovery/token endpoints for its OAuth flow. Entra does
-not need an inbound connection to kind: the user's browser is redirected to
-the local Gateway callback URL.
-
-After deploying the selector, test outbound DNS/TLS/JWKS connectivity:
+### 4. Create the OAuth secrets
 
 ```sh
+bash infra/trino-k8s-cluster/helm/create-oauth-secrets.sh
+```
+
+Enter the Application (client) ID and client secret from step 1. The script also
+prompts for the Trino internal shared secret. It creates the secret in both
+namespaces.
+
+### 5. Enable OAuth on both Trino releases
+
+```sh
+helm upgrade --install trino trino/trino \
+   --namespace default \
+   -f infra/trino-k8s-cluster/values/values-local.yaml \
+   -f infra/trino-k8s-cluster/values/catalog.yaml \
+   -f infra/trino-k8s-cluster/values/oauth2-local.example.yaml \
+   --wait --timeout 10m
+
+helm upgrade --install georestricted trino/trino \
+   --namespace georestricted \
+   -f infra/trino-restricted/values/values.yaml \
+   -f infra/trino-restricted/values/catalog.yaml \
+   -f infra/trino-k8s-cluster/values/oauth2-local.example.yaml \
+   --wait --timeout 10m
+```
+
+### 6. Build and deploy the selector
+
+```sh
+docker build -f Dockerfile.routing-api -t geo-pdp-routing-api:dev .
+kind load docker-image geo-pdp-routing-api:dev --name trino
+kubectl apply -f infra/trino-gateway/routing-api.yaml
+kubectl rollout status deployment/routing-api -n default --timeout=2m
 kubectl exec deploy/routing-api -- python -c 'import os,urllib.request; print(urllib.request.urlopen(os.environ["OIDC_JWKS_URL"], timeout=10).status)'
 ```
 
-If the environment requires an outbound proxy or private CA, configure it for
-the container and verify certificate trust. Do not disable TLS verification.
+The last command should print `200`.
 
-## 2. Configure Microsoft Entra ID
+### 7. Connect Gateway and enable routing
 
-Create/use an Entra application registration for the Trino OAuth client/API.
-Configure Trino with that app's client ID and secret. For the local proxy
-example in Step 3, register this exact redirect URI (confirm against the actual
-redirect generated by your Trino/Gateway version):
-
-`https://trino.poc.test:8443/oauth2/callback`
-
-The selector URL `/gateway-rules` is not an Entra redirect URI.
-
-Configure an access-token audience for the Trino API and make sure the JWT's
-`aud` is accepted by both selector and Trino. Trino trusts the OAuth client ID
-by default; if the audience differs, configure
-`http-server.authentication.oauth2.additional-audiences` on both coordinators.
-Expose/request the delegated API scope needed by the Trino OAuth client as
-required by your tenant's setup.
-
-For this POC, assign test users a controlled location attribute and make sure
-it appears in the **access token for the Trino API**. Entra does not issue an
-arbitrary `geo_location` claim by default. Optional claims or a directory
-extension/claims-mapping configuration may be needed. The emitted claim name
-can be tenant-specific (for example, directory extensions may appear as
-`extn.geo_location`). Set `OIDC_LOCATION_CLAIM` to the exact claim key in the
-verified token and use `US` or `UK` values. This is an asserted test assignment,
-not proof of a person's live physical location.
-
-Set the selector configuration in
-[infra/trino-gateway/routing-api.yaml](../infra/trino-gateway/routing-api.yaml):
-
-- `OIDC_ISSUER`: exact JWT `iss`, commonly
-  `https://login.microsoftonline.com/<tenant-id>/v2.0`.
-- `OIDC_AUDIENCE`: exact JWT `aud` expected by the selector.
-- `OIDC_JWKS_URL`: commonly
-  `https://login.microsoftonline.com/<tenant-id>/discovery/v2.0/keys`.
-- `OIDC_LOCATION_CLAIM`: exact location claim key in the access token.
-- `TRINO_POLICY_ROUTING_GROUPS`: policy destination to Gateway group mapping.
-
-A real-time IP-derived location is not implemented; it is a separate,
-approximate signal.
-
-## 3. Provide HTTPS on the local Gateway endpoint
-
-A local option is Caddy on the Mac as a TLS reverse proxy to a Gateway
-port-forward. Install Caddy and mkcert, then trust mkcert's local CA on the
-Mac/browser:
+Follow the Gateway install guide only if Gateway is not installed yet:
+[infra/trino-gateway/README.md](../infra/trino-gateway/README.md). Register its
+two backends there: base coordinator -> `unrestricted`; restricted coordinator ->
+`georestricted`. In [Gateway values](../infra/trino-gateway/values.yaml), set
+`rulesEngineEnabled: true` and keep the external selector URL unchanged. Do not
+exclude the `Authorization` header. Then enable the selector and apply both
+updates:
 
 ```sh
-brew install caddy mkcert
-mkcert -install
-mkcert -cert-file /tmp/trino-poc.pem -key-file /tmp/trino-poc-key.pem trino.poc.test
+# First verify both Trino coordinators require OAuth and can accept Entra tokens.
+# Then set TRINO_OAUTH_ENFORCED: "true" in routing-api.yaml.
+kubectl apply -f infra/trino-gateway/routing-api.yaml
+kubectl rollout restart deployment/routing-api
 ```
 
-Map `trino.poc.test` to `127.0.0.1` in local DNS or `/etc/hosts` (for example,
-`echo '127.0.0.1 trino.poc.test' | sudo tee -a /etc/hosts`). Start a Gateway
-port-forward in one terminal:
+Re-run the Gateway Helm upgrade command from its install guide so its database
+credentials continue to be supplied, and wait for Gateway to become ready.
+
+### 8. Get a token and simulate a country
 
 ```sh
 kubectl port-forward -n default svc/trino-gateway 18080:8080
 ```
 
-In another terminal start Caddy with the checked-in
-[Caddyfile](../infra/trino-gateway/Caddyfile):
+In another terminal:
 
 ```sh
-export TRINO_TLS_CERT=/tmp/trino-poc.pem
-export TRINO_TLS_KEY=/tmp/trino-poc-key.pem
-caddy run --config infra/trino-gateway/Caddyfile
-```
+az login --tenant "24454ef6-5e74-4b73-8910-0d8f3e32d649" --scope "api://887aa013-8646-4f77-944f-6d0922eabbed/access" 
+export TRINO_ACCESS_TOKEN=$(az account get-access-token \
+  --scope api://887aa013-8646-4f77-944f-6d0922eabbed/access --query accessToken -o tsv)
+export TRINO_USER=<user UPN> P1q2r3s4
+export TRINO_HTTP_SCHEME=http
+export TRINO_POC_COUNTRY=US
 
-This provides `https://trino.poc.test:8443`. Caddy forwards the HTTPS scheme
-and host to Gateway; Gateway is configured with
-`http-server.process-forwarded=true`, and both Trino releases already set
-`http-server.process-forwarded=true`. Verify the deployed Gateway preserves
-trusted forwarded scheme/host headers to Trino. Keep Gateway and coordinator
-Services private, and do not trust client-forged forwarded headers.
-
-Set Python's CA bundle to mkcert's root certificate (find its directory with
-`mkcert -CAROOT`; the file is `rootCA.pem`). A direct port-forward to Gateway
-port 8080 is plain HTTP and is only for management/readiness checks, not OAuth
-queries. Do not disable TLS verification or send bearer tokens over HTTP.
-
-## 4. Deploy the Trino clusters
-
-Deploy the base Trino/metastore and restricted Trino/metastore using the
-existing scripts. They prompt for ADLS and PostgreSQL secrets:
-
-```sh
-bash infra/trino-k8s-cluster/helm/install-trino.sh
-bash infra/trino-restricted/helm/install.sh
-```
-
-Verify both releases are ready:
-
-```sh
-kubectl get pods -n default
-kubectl get pods -n georestricted
-kubectl get svc -n default
-kubectl get svc -n georestricted
-```
-
-Both currently run locally and share data/metastore credentials; this is not
-proof of regional data residency.
-
-## 5. Configure OAuth on both Trino coordinators — required gate
-
-The OAuth configuration example is
-[oauth2-local.example.yaml](../infra/trino-k8s-cluster/values/oauth2-local.example.yaml).
-It is designed as an additional values file for **both** releases and uses
-namespace-local secrets. Replace its Entra issuer placeholder. Create a
-`trino-oauth-secrets` Kubernetes Secret in **each** namespace with these keys:
-
-- `TRINO_OAUTH_CLIENT_ID` — Entra application client ID.
-- `TRINO_OAUTH_CLIENT_SECRET` — Entra application secret.
-- `TRINO_INTERNAL_SHARED_SECRET` — long random value for Trino internal
-  communication; use a secure secret store and use a shared value for all pods
-  that participate in each cluster.
-
-overlay or Git. After creating both namespace-local secrets, upgrade each
-Keep the existing `trino-adls-credentials` Secret. The overlay preserves that
-reference and adds `trino-oauth-secrets`. Do not put the secret values in the
-overlay or Git. Create/update the namespace-local OAuth Secrets using the
-prompt-based helper; it creates a separate internal shared secret per Trino
-namespace:
-
-```sh
-bash infra/trino-k8s-cluster/helm/create-oauth-secrets.sh
-kubectl get secrets trino-oauth-secrets -n default
-kubectl get secrets trino-oauth-secrets -n georestricted
-```
-
-Do not display Secret data in logs or terminal output. Then upgrade each
-release with the existing values plus the OAuth overlay:
-
-```sh
-helm upgrade --install trino trino/trino \
-  --namespace default \
-  -f infra/trino-k8s-cluster/values/values-local.yaml \
-  -f infra/trino-k8s-cluster/values/catalog.yaml \
-  -f infra/trino-k8s-cluster/values/oauth2-local.example.yaml \
-  --wait --timeout 10m
-
-helm upgrade --install georestricted trino/trino \
-  --namespace georestricted \
-  -f infra/trino-restricted/values/values.yaml \
-  -f infra/trino-restricted/values/catalog.yaml \
-  -f infra/trino-k8s-cluster/values/oauth2-local.example.yaml \
-  --wait --timeout 10m
-```
-
-The effective configuration must include Trino OAuth2, forwarded HTTPS, the
-same Entra OAuth client, and a `principal-field` actually present in the token.
-The sample uses `preferred_username`; set `TRINO_USER` to that value (usually
-the Entra UPN). If your token uses a different principal claim, change both
-Trino's `principal-field` and client username accordingly. The selector
-independently uses verified `sub` and the configured location claim. Trino
-requires secure requests (TLS or correctly trusted `process-forwarded`) and a
-shared internal communication secret. Confirm chart-rendered configuration
-and restart status after applying. Test that unauthenticated requests to **each
-coordinator** are rejected and valid OAuth-authenticated requests are accepted
-before proceeding. Do not expose coordinator Services outside the cluster.
-
-For a production design, prefer TLS on Gateway-to-coordinator links too and
-configure Gateway to trust the coordinator CA. The forwarded-HTTPS setup here
-is a local trusted-proxy POC, not a substitute for that deployment hardening.
-
-## 6. Build and deploy the routing selector
-
-Build the image and load it into your existing kind cluster. Set `KIND_CLUSTER`
-to the cluster name reported in Step 1:
-
-```sh
-docker build -f Dockerfile.routing-api -t geo-pdp-routing-api:dev .
-KIND_CLUSTER="kind" # change this if your kind cluster has another name
-kind load docker-image geo-pdp-routing-api:dev --name "$KIND_CLUSTER"
-```
-
-Edit the placeholders in
-[infra/trino-gateway/routing-api.yaml](../infra/trino-gateway/routing-api.yaml)
-with the tenant, audience, JWKS URL and verified claim key, then deploy:
-
-```sh
-kubectl apply -f infra/trino-gateway/routing-api.yaml
-kubectl rollout status deployment/routing-api -n default --timeout=2m
-kubectl logs deployment/routing-api -n default
-kubectl exec deploy/routing-api -- python -c 'import os,urllib.request; print(urllib.request.urlopen(os.environ["OIDC_JWKS_URL"], timeout=10).status)'
-```
-
-The manifest has `TRINO_OAUTH_ENFORCED=false` initially. The selector only
-needs in-cluster HTTP from Gateway; do not publish it externally.
-
-## 7. Install Gateway and register routing groups
-
-Follow the pinned Gateway chart install steps in
-[infra/trino-gateway/README.md](../infra/trino-gateway/README.md). Its external
-rules engine stays disabled during setup. Register both Trino coordinator
-services as Gateway backends. The base backend must have routing group `adhoc`
-(the OAuth bootstrap/default group); the restricted backend uses
-`georestricted`. Backend service protocol and port must match the effective
-coordinator configuration. Ensure OAuth callback requests are routed to a
-coordinator configured with the same Entra OAuth client. Gateway query-ID
-affinity should keep subsequent query polling/result requests on the selected
-cluster.
-
-Verify the Gateway TLS proxy and readiness endpoint at
-`https://trino.poc.test:8443/health`. Do not use the HTTP management
-port-forward for query execution.
-
-## 8. Enable identity-aware routing after Trino OAuth passes
-
-Only after Step 5's direct coordinator authentication checks pass:
-
-1. Set `TRINO_OAUTH_ENFORCED="true"` in the selector ConfigMap and re-apply
-   [routing-api.yaml](../infra/trino-gateway/routing-api.yaml). Restart the
-   selector Deployment so it reads the changed environment.
-2. Set `config.routingRules.rulesEngineEnabled: true` in
-   [Gateway values](../infra/trino-gateway/values.yaml); keep `rulesType: EXTERNAL`
-   and `urlPath` set to
-   `http://routing-api.default.svc.cluster.local:8080/gateway-rules`.
-3. Do not exclude `Authorization`; Gateway must pass the token to the selector
-   and on to Trino. Keep the selector from using client-controlled identity,
-   location, or routing-group headers.
-4. Upgrade the Gateway Helm release with the updated values file.
-
-Gateway expects `routingGroup`, `errors`, and `externalHeaders` in the
-selector's JSON response. Selector policy errors are propagated. Gateway can
-fall back to the default/client routing header if the selector is unreachable;
-strip `X-Trino-Routing-Group` at a trusted edge, monitor availability, and
-configure Trino authorization too. Routing alone is not an authorization
-boundary.
-
-## 9. Invoke Gateway with SQL
-
-Use a client environment with browser access and the Gateway CA certificate.
-Install dependencies and set the local endpoint/principal:
-
-```sh
-python -m pip install -r requirements.txt
-export TRINO_HOST=trino.poc.test
-export TRINO_PORT=8443
-export TRINO_USER=user@example.com # replace with the configured Trino principal
-export TRINO_CA_BUNDLE="$(mkcert -CAROOT)/rootCA.pem"
-```
-
-For an interactive user, leave `TRINO_ACCESS_TOKEN` unset. The sample client
-uses the Trino Python OAuth handler, which launches the browser for Entra
-sign-in when required. Submit a catalog-qualified query:
-
-```sh
 python scripts/query_gateway.py 'SELECT * FROM tpch.sf1.customer LIMIT 5'
+python scripts/query_gateway.py 'select c.*, t.* from trades_raw.trades_schema.customer c INNER JOIN trades_raw.trades_schema.trades t on c.customer_id = t.customer_id limit 5'
 ```
 
-For a US-assigned test user, query the restricted catalog:
+Expected: the first query routes to `unrestricted`; `trades_raw` routes to
+`georestricted` while `TRINO_POC_COUNTRY=US`. Simulate a trip by changing it to
+`GB` and rerunning the `trades_raw` query; the policy should deny it. The client
+adds `X-Poc-User-Country` to the Gateway request, Gateway forwards it to the
+selector, and the selector returns the chosen routing group or a denial.
 
-```sh
-python scripts/query_gateway.py 'SELECT * FROM trades_raw.market.trades LIMIT 5'
-```
+Decode the token at https://jwt.ms to check `iss`, `aud`, and
+`preferred_username` if anything is rejected. Country is deliberately not taken
+from this token. Tokens expire after about an hour;
+re-run the `export` line to refresh.
 
-The first unauthenticated submission is sent to the bootstrap coordinator,
-which issues the OAuth challenge. After sign-in, the Trino client retries with
-a bearer token. Gateway invokes the selector; the selector verifies the token
-and routes a US `trades_raw` query to `georestricted`. Trino independently
-authenticates the user and executes the SQL. Gateway routes follow-up query
-polling and result requests to that same coordinator. A UK-assigned user's
-`trades_raw` query should be denied by policy; `tpch` should route to `adhoc`.
+## Notes
 
-For a service client, acquire a token for the same Trino API audience using an
-Entra-supported client-credentials flow and required application role. Set
-`TRINO_ACCESS_TOKEN` in the client process without printing or committing it;
-the script then uses bearer-token authentication. This identifies the service
-principal, not a delegated human. App-only tokens do not normally include a
-human location claim; configure a trusted service-level location claim or a
-server-side service-principal-to-location mapping before expecting a route.
-Use delegated/OBO acquisition when acting for a user. Missing location is
-denied, and Trino still validates every token.
+- `routing-api.yaml` holds the selector's environment variables (ConfigMap) plus
+  its Deployment and Service. The selector is the service Gateway calls to get a
+  routing group.
+- Trino rejects authenticated requests over plain HTTP by default.
+  `allow-insecure-over-http=true` in the overlay is for local use only. Use TLS
+  for anything shared.
+- `scripts/query_gateway.py` sends the Entra token as a bearer header. The
+   current local HTTP-only Trino chart setting is for development; the trusted
+   ingress and production use must provide HTTPS.
+- To add a routing group: register a backend in Gateway with that
+  `routingGroup`, add a `CatalogPolicy` in [pdp/policy.py](../pdp/policy.py)
+  with the same group name, add tests, and rebuild the selector.
+- `TRINO_POC_COUNTRY` is caller-controlled and trivially spoofed. It demonstrates
+   policy evaluation and routing only; it does not establish where a user is.
+   Real live-location enforcement requires a trusted IP-aware ingress that
+   overwrites the country header. Do not log bearer tokens.
 
-## Expected evidence and troubleshooting
-
-- **Selector cannot reach Entra:** check pod DNS, outbound TCP 443, proxy and
-  CA configuration. No inbound Entra-to-kind connection is needed.
-- **Token/claim rejected:** verify issuer, audience, signature/expiry and exact
-  location claim key/value in the access token issued for the Trino API.
-- **OAuth callback mismatch:** compare the actual callback URI with the Entra
-  app registration and external Gateway HTTPS hostname/port.
-- **Trino rejects the token/user:** check client ID, audience, principal field,
-  `TRINO_USER`, and OAuth settings on both coordinators.
-- **Wrong routing group:** inspect selector/Gateway logs and verify the Gateway
-  analyzed catalog list and registered backend groups. Do not submit SQL to
-  `/gateway-rules`.
-- **Research evidence:** record the test identity/location assignment, policy
-  allow/deny, selected Gateway group/backend, Trino authenticated principal,
-  and query result. Never log bearer tokens.
-
-Run the unit suite from the repository root with `python -m pytest`.
+Run unit tests from the repository root with `python -m pytest`.

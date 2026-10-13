@@ -1,8 +1,12 @@
 image:
   tag: "480"
 
+server:
+  workers: 1
+
 additionalConfigProperties:
   - http-server.process-forwarded=true
+  - catalog.management=dynamic
 
 envFrom:
   - secretRef:
@@ -19,11 +23,11 @@ coordinator:
       memory: "4Gi"
 
 worker:
-  replicas: 2
+  replicas: 1
   resources:
     requests:
       cpu: "1"
-      memory: "2Gi"
+      memory: "1Gi"
     limits:
       cpu: "2"
       memory: "4Gi"

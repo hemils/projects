@@ -27,13 +27,13 @@ def test_verified_us_identity_routes_restricted_catalog_to_georestricted() -> No
 
     def verify(token: str) -> AuthenticatedIdentity:
         seen_tokens.append(token)
-        return AuthenticatedIdentity(subject="entra-user-object-id", location="US")
+        return AuthenticatedIdentity(subject="entra-user-object-id")
 
     client = TestClient(make_app(token_verifier=verify))
     response = client.post(
         "/gateway-rules",
         json=gateway_request(["trades_raw"]),
-        headers={"Authorization": "Bearer signed-access-token"},
+        headers={"Authorization": "Bearer signed-access-token", "X-Poc-User-Country": "US"},
     )
 
     assert response.status_code == 200
@@ -49,7 +49,7 @@ def test_verified_uk_identity_is_denied_for_restricted_catalog() -> None:
     client = TestClient(
         make_app(
             token_verifier=lambda _: AuthenticatedIdentity(
-                subject="entra-user-object-id", location="UK"
+                subject="entra-user-object-id"
             )
         )
     )
@@ -57,7 +57,7 @@ def test_verified_uk_identity_is_denied_for_restricted_catalog() -> None:
     response = client.post(
         "/gateway-rules",
         json=gateway_request(["trades_raw"]),
-        headers={"Authorization": "Bearer token"},
+        headers={"Authorization": "Bearer token", "X-Poc-User-Country": "GB"},
     )
 
     assert response.status_code == 200
@@ -67,11 +67,11 @@ def test_verified_uk_identity_is_denied_for_restricted_catalog() -> None:
     ]
 
 
-def test_uk_identity_routes_unrestricted_catalog_to_adhoc() -> None:
+def test_uk_identity_routes_unrestricted_catalog_to_unrestricted_group() -> None:
     client = TestClient(
         make_app(
             token_verifier=lambda _: AuthenticatedIdentity(
-                subject="entra-user-object-id", location="UK"
+                subject="entra-user-object-id"
             )
         )
     )
@@ -79,11 +79,11 @@ def test_uk_identity_routes_unrestricted_catalog_to_adhoc() -> None:
     response = client.post(
         "/gateway-rules",
         json=gateway_request(["tpch"]),
-        headers={"Authorization": "Bearer token"},
+        headers={"Authorization": "Bearer token", "X-Poc-User-Country": "GB"},
     )
 
     assert response.status_code == 200
-    assert response.json()["routingGroup"] == "adhoc"
+    assert response.json()["routingGroup"] == "unrestricted"
     assert response.json()["errors"] == []
 
 
@@ -96,7 +96,7 @@ def test_missing_bearer_token_only_selects_authentication_bootstrap_backend() ->
     response = client.post("/gateway-rules", json=gateway_request(["trades_raw"]))
 
     assert response.status_code == 200
-    assert response.json()["routingGroup"] == "adhoc"
+    assert response.json()["routingGroup"] == "unrestricted"
     assert response.json()["errors"] == []
 
 
@@ -136,11 +136,11 @@ def test_identity_provider_failure_returns_gateway_error() -> None:
     ]
 
 
-def test_client_supplied_user_and_location_headers_are_not_identity_sources() -> None:
+def test_poc_country_header_drives_policy() -> None:
     client = TestClient(
         make_app(
             token_verifier=lambda _: AuthenticatedIdentity(
-                subject="verified-user", location="UK"
+                subject="verified-user"
             )
         )
     )
@@ -150,6 +150,7 @@ def test_client_supplied_user_and_location_headers_are_not_identity_sources() ->
         json=gateway_request(["trades_raw"]),
         headers={
             "Authorization": "Bearer token",
+            "X-Poc-User-Country": "GB",
             "X-Trino-User": "spoofed-user",
             "X-User-Location": "US",
         },
@@ -161,15 +162,32 @@ def test_client_supplied_user_and_location_headers_are_not_identity_sources() ->
     ]
 
 
+def test_authenticated_query_is_denied_without_poc_country() -> None:
+    client = TestClient(
+        make_app(token_verifier=lambda _: AuthenticatedIdentity(subject="verified-user"))
+    )
+
+    response = client.post(
+        "/gateway-rules",
+        json=gateway_request(["tpch"]),
+        headers={"Authorization": "Bearer token"},
+    )
+
+    assert response.json()["routingGroup"] is None
+    assert response.json()["errors"] == [
+        "POC country header is missing or invalid"
+    ]
+
+
 def test_multiple_catalogs_and_unparsed_queries_are_denied() -> None:
     client = TestClient(
         make_app(
             token_verifier=lambda _: AuthenticatedIdentity(
-                subject="verified-user", location="US"
+                subject="verified-user"
             )
         )
     )
-    headers = {"Authorization": "Bearer token"}
+    headers = {"Authorization": "Bearer token", "X-Poc-User-Country": "US"}
 
     multiple = client.post(
         "/gateway-rules",
@@ -199,7 +217,7 @@ def test_oauth_callback_uses_bootstrap_group() -> None:
         headers={"Authorization": "Bearer token"},
     )
 
-    assert response.json()["routingGroup"] == "adhoc"
+    assert response.json()["routingGroup"] == "unrestricted"
     assert response.json()["errors"] == []
 
 

@@ -1,41 +1,58 @@
 """Small, deterministic catalog/location policy for the POC.
 
-This module is independent of FastAPI and Trino Gateway. It returns a policy
-cluster name; the application resolves that name against Gateway's backend
-inventory.
+This module is independent of FastAPI and Trino Gateway. Policy metadata
+returns the Gateway routing-group name selected for an allowed request.
 """
 
 from dataclasses import dataclass
-from collections.abc import Mapping
+from collections.abc import Sequence
 
 
 @dataclass(frozen=True)
 class CatalogPolicy:
-    """Static policy metadata describing its eligible cluster."""
+    """Locations and Gateway group shared by a set of catalogs."""
 
+    catalogs: frozenset[str]
     allowed_locations: frozenset[str] | None
-    cluster_name: str
+    routing_group: str
 
 
 # ``None`` means every non-empty configured location is allowed.
-CATALOG_POLICIES: dict[str, CatalogPolicy] = {
-    "trades_raw": CatalogPolicy(
+CATALOG_POLICIES: list[CatalogPolicy] = [
+    CatalogPolicy(
+        catalogs=frozenset({"trades_raw"}),
         allowed_locations=frozenset({"US"}),
-        cluster_name="georestricted",
+        routing_group="georestricted",
     ),
-    "tpch": CatalogPolicy(
+    CatalogPolicy(
+            catalogs=frozenset({"trades_raw"}),
+            allowed_locations=frozenset({"UK"}),
+            routing_group="georestricted",
+        ),
+    CatalogPolicy(
+                catalogs=frozenset({"customer"}),
+                allowed_locations=frozenset({"US"}),
+                routing_group="georestricted",
+            ),
+    CatalogPolicy(
+                catalogs=frozenset({"customer"}),
+                allowed_locations=frozenset({"DE"}),
+                routing_group="georestricted",
+        ),
+    CatalogPolicy(
+        catalogs=frozenset({"tpch"}),
         allowed_locations=None,
-        cluster_name="unrestricted",
+        routing_group="unrestricted",
     ),
-}
+]
 
 
 @dataclass(frozen=True)
 class PolicyDecision:
-    """Policy result consumed by the query-routing application."""
+    """Policy result consumed by the Gateway external selector."""
 
     permit: bool
-    cluster_name: str | None
+    routing_group: str | None
     reason: str
 
 
@@ -44,14 +61,14 @@ def decide(
     subject: str,
     location: str | None,
     catalogs: set[str],
-    catalog_policies: Mapping[str, CatalogPolicy] = CATALOG_POLICIES,
+    catalog_policies: Sequence[CatalogPolicy] = CATALOG_POLICIES,
 ) -> PolicyDecision:
-    """Decide access for one catalog using an authenticated policy context.
+    """Decide access for the catalogs of one query using an authenticated context.
 
     The caller must provide identity and location only after validating their
-    trusted source (OIDC claims in this POC); never pass unverified request
-    headers. Queries referencing zero or multiple catalogs are denied so
-    incomplete catalog classification cannot grant access.
+    trusted sources (OIDC and a network-location edge); never pass unverified
+    request headers. Every catalog must be covered and permitted, and all must
+    share one routing group, since a query cannot span Gateway backends.
     """
 
     if not subject.strip():
@@ -62,22 +79,36 @@ def decide(
         return PolicyDecision(False, None, "POC location is not configured")
 
     normalized_catalogs = {catalog.strip().lower() for catalog in catalogs if catalog.strip()}
-    if len(normalized_catalogs) != 1:
-        return PolicyDecision(False, None, "Exactly one analyzed catalog is required")
+    if not normalized_catalogs:
+        return PolicyDecision(False, None, "At least one analyzed catalog is required")
 
-    catalog = next(iter(normalized_catalogs))
-    policies_by_catalog = {
-        name.strip().lower(): metadata
-        for name, metadata in catalog_policies.items()
-        if name.strip()
-    }
-    metadata = policies_by_catalog.get(catalog)
-    if metadata is None:
-        return PolicyDecision(False, None, f"Catalog is not covered by the POC policy: {catalog}")
+    policies_by_catalog: dict[str, list[CatalogPolicy]] = {}
+    for policy in catalog_policies:
+        for name in policy.catalogs:
+            if name.strip():
+                policies_by_catalog.setdefault(name.strip().lower(), []).append(policy)
 
-    if metadata.allowed_locations is not None:
-        allowed_locations = {region.strip().upper() for region in metadata.allowed_locations}
-        if normalized_location not in allowed_locations:
+    # A catalog may have several entries; any entry permitting the location grants it.
+    common_groups: set[str] | None = None
+    for catalog in sorted(normalized_catalogs):
+        entries = policies_by_catalog.get(catalog)
+        if not entries:
+            return PolicyDecision(False, None, f"Catalog is not covered by the POC policy: {catalog}")
+        groups = {
+            entry.routing_group
+            for entry in entries
+            if entry.allowed_locations is None
+            or normalized_location in {r.strip().upper() for r in entry.allowed_locations}
+        }
+        if not groups:
             return PolicyDecision(False, None, f"Location {normalized_location} is not permitted for catalog {catalog}")
+        common_groups = groups if common_groups is None else common_groups & groups
 
-    return PolicyDecision(True, metadata.cluster_name, f"Catalog {catalog} is permitted from {normalized_location}")
+    if not common_groups or len(common_groups) != 1:
+        return PolicyDecision(False, None, "Catalogs do not resolve to exactly one routing group")
+
+    return PolicyDecision(
+        True,
+        next(iter(common_groups)),
+        f"Catalogs {', '.join(sorted(normalized_catalogs))} are permitted from {normalized_location}",
+    )

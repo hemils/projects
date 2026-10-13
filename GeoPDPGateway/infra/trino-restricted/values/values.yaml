@@ -1,3 +1,6 @@
+server:
+  workers: 1
+
 additionalConfigProperties:
   - http-server.process-forwarded=true
 

@@ -43,6 +43,9 @@ spec:
                   "datanucleus.autoCreateSchema": "false",
                   "hive.metastore.schema.verification": "true",
                   "hive.metastore.warehouse.dir": "file:///tmp/hive/warehouse",
+                  "fs.azure.account.key.tradeslake.dfs.core.windows.net": os.environ["AZURE_ACCESS_KEY"],
+                  "fs.abfs.impl": "org.apache.hadoop.fs.azurebfs.AzureBlobFileSystem",
+                  "fs.abfss.impl": "org.apache.hadoop.fs.azurebfs.SecureAzureBlobFileSystem",
               }
               for name, value in properties.items():
                   prop = ET.SubElement(root, "property")
@@ -52,6 +55,8 @@ spec:
           envFrom:
             - secretRef:
                 name: hive-metastore-db-secret
+            - secretRef:
+                name: trino-adls-credentials
           volumeMounts:
             - name: hive-conf
               mountPath: /conf
@@ -95,6 +100,9 @@ spec:
           ports:
             - name: thrift
               containerPort: 9083
+          env:
+            - name: HADOOP_OPTIONAL_TOOLS
+              value: hadoop-azure
           envFrom:
             - secretRef:
                 name: hive-metastore-db-secret

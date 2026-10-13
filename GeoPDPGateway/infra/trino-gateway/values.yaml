@@ -17,16 +17,16 @@ config:
   clusterStatsConfiguration:
     monitorType: INFO_API
   routing:
-    defaultRoutingGroup: adhoc
+    defaultRoutingGroup: unrestricted
   requestAnalyzerConfig:
     analyzeRequest: true
   routingRules:
     # Enable only after both Trino coordinators enforce OAUTH2 over trusted HTTPS.
-    rulesEngineEnabled: false
+    rulesEngineEnabled: true
     rulesType: EXTERNAL
     rulesExternalConfiguration:
       urlPath: http://routing-api.default.svc.cluster.local:8080/gateway-rules
-      # The selector validates this bearer token against the configured Entra JWKS.
+      # The selector validates this bearer token against the configured OIDC JWKS.
       # Gateway still forwards the original token to the selected Trino coordinator.
       excludeHeaders:
         - Cookie

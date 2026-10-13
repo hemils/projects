@@ -1,0 +1,22 @@
+# Overlay for both local Trino Helm releases (Microsoft Entra ID).
+# Replace <TENANT_ID>; client ID/secret come from the trino-oauth-secrets Secret.
+server:
+  config:
+    authenticationType: oauth2
+
+additionalConfigProperties:
+  # Local-only: clients reach Gateway over plain HTTP via kubectl port-forward.
+  - http-server.authentication.allow-insecure-over-http=true
+  - http-server.process-forwarded=true
+  - http-server.authentication.oauth2.issuer=https://login.microsoftonline.com/24454ef6-5e74-4b73-8910-0d8f3e32d649/v2.0
+  - http-server.authentication.oauth2.client-id=${ENV:TRINO_OAUTH_CLIENT_ID}
+  - http-server.authentication.oauth2.client-secret=${ENV:TRINO_OAUTH_CLIENT_SECRET}
+  - http-server.authentication.oauth2.principal-field=preferred_username
+  - internal-communication.shared-secret=${ENV:TRINO_INTERNAL_SHARED_SECRET}
+
+envFrom:
+  # Values arrays replace earlier arrays; preserve the ADLS credential reference.
+  - secretRef:
+      name: trino-adls-credentials
+  - secretRef:
+      name: trino-oauth-secrets
