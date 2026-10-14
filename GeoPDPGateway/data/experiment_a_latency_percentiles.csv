@@ -1,0 +1,6 @@
+observed,catalog,p50_ms,p90_ms,p95_ms,n
+allow,customer,641.26,673.7,681.09,60
+allow,tpch,37.92,45.69,53.89,120
+allow,trades_raw,1760.36,1866.99,1938.69,30
+deny,customer,5.97,8.07,8.36,60
+deny,trades_raw,6.16,8.73,9.75,90

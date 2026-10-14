@@ -1,0 +1,361 @@
+user,country,catalog,expected,observed,seconds,detail
+us_user1,US,tpch,allow,allow,0.14825550001114607,
+us_user1,US,tpch,allow,allow,0.04219512501731515,
+us_user1,US,tpch,allow,allow,0.04044712497852743,
+us_user1,US,tpch,allow,allow,0.0398229171987623,
+us_user1,US,tpch,allow,allow,0.044189915992319584,
+us_user1,US,tpch,allow,allow,0.06503358413465321,
+us_user1,US,tpch,allow,allow,0.0692757919896394,
+us_user1,US,tpch,allow,allow,0.041894915979355574,
+us_user1,US,tpch,allow,allow,0.04456316586583853,
+us_user1,US,tpch,allow,allow,0.03884483384899795,
+us_user1,US,tpch,allow,allow,0.03684733295813203,
+us_user1,US,tpch,allow,allow,0.03814520896412432,
+us_user1,US,tpch,allow,allow,0.04110016697086394,
+us_user1,US,tpch,allow,allow,0.03827275009825826,
+us_user1,US,tpch,allow,allow,0.04427733295597136,
+us_user1,US,tpch,allow,allow,0.04016862506978214,
+us_user1,US,tpch,allow,allow,0.051334874937310815,
+us_user1,US,tpch,allow,allow,0.05785066680982709,
+us_user1,US,tpch,allow,allow,0.042771332897245884,
+us_user1,US,tpch,allow,allow,0.04222750011831522,
+us_user1,US,tpch,allow,allow,0.04259016690775752,
+us_user1,US,tpch,allow,allow,0.03793087508529425,
+us_user1,US,tpch,allow,allow,0.036448667058721185,
+us_user1,US,tpch,allow,allow,0.03395966603420675,
+us_user1,US,tpch,allow,allow,0.03339737490750849,
+us_user1,US,tpch,allow,allow,0.03633187501691282,
+us_user1,US,tpch,allow,allow,0.03168512508273125,
+us_user1,US,tpch,allow,allow,0.033183292020112276,
+us_user1,US,tpch,allow,allow,0.032652500085532665,
+us_user1,US,tpch,allow,allow,0.034236625069752336,
+us_user1,US,trades_raw,allow,allow,2.3038925831206143,
+us_user1,US,trades_raw,allow,allow,1.7344808329362422,
+us_user1,US,trades_raw,allow,allow,1.685058625182137,
+us_user1,US,trades_raw,allow,allow,1.7019760000985116,
+us_user1,US,trades_raw,allow,allow,1.814006790984422,
+us_user1,US,trades_raw,allow,allow,1.8590602918993682,
+us_user1,US,trades_raw,allow,allow,1.7284390828572214,
+us_user1,US,trades_raw,allow,allow,1.81908612488769,
+us_user1,US,trades_raw,allow,allow,1.7584560001268983,
+us_user1,US,trades_raw,allow,allow,1.6768602079246193,
+us_user1,US,trades_raw,allow,allow,1.7622668328695,
+us_user1,US,trades_raw,allow,allow,1.8371265830937773,
+us_user1,US,trades_raw,allow,allow,1.9723208749201149,
+us_user1,US,trades_raw,allow,allow,1.6788017919752747,
+us_user1,US,trades_raw,allow,allow,1.6340362499468029,
+us_user1,US,trades_raw,allow,allow,1.6864156248047948,
+us_user1,US,trades_raw,allow,allow,1.8400655419100076,
+us_user1,US,trades_raw,allow,allow,1.6703445001039654,
+us_user1,US,trades_raw,allow,allow,1.833859208971262,
+us_user1,US,trades_raw,allow,allow,1.7185748328920454,
+us_user1,US,trades_raw,allow,allow,1.6349835831206292,
+us_user1,US,trades_raw,allow,allow,1.781518334057182,
+us_user1,US,trades_raw,allow,allow,1.863589582964778,
+us_user1,US,trades_raw,allow,allow,1.7025642909575254,
+us_user1,US,trades_raw,allow,allow,1.7927958751097322,
+us_user1,US,trades_raw,allow,allow,1.8560207090340555,
+us_user1,US,trades_raw,allow,allow,1.7227180420886725,
+us_user1,US,trades_raw,allow,allow,1.897581374971196,
+us_user1,US,trades_raw,allow,allow,1.6521214169915766,
+us_user1,US,trades_raw,allow,allow,1.8282715419773012,
+us_user1,US,customer,allow,allow,1.3203628328628838,
+us_user1,US,customer,allow,allow,0.6563641668763012,
+us_user1,US,customer,allow,allow,0.6777492919936776,
+us_user1,US,customer,allow,allow,0.67361258296296,
+us_user1,US,customer,allow,allow,0.6379541661590338,
+us_user1,US,customer,allow,allow,0.6322859588544816,
+us_user1,US,customer,allow,allow,0.6520737088285387,
+us_user1,US,customer,allow,allow,0.6417694580741227,
+us_user1,US,customer,allow,allow,0.636080542113632,
+us_user1,US,customer,allow,allow,0.7167715411633253,
+us_user1,US,customer,allow,allow,0.6398485000245273,
+us_user1,US,customer,allow,allow,0.6339207079727203,
+us_user1,US,customer,allow,allow,0.6710874170530587,
+us_user1,US,customer,allow,allow,0.6373221250250936,
+us_user1,US,customer,allow,allow,0.7837270828895271,
+us_user1,US,customer,allow,allow,0.6533177911769599,
+us_user1,US,customer,allow,allow,0.6363530829548836,
+us_user1,US,customer,allow,allow,0.6413456669542938,
+us_user1,US,customer,allow,allow,0.6693495421204716,
+us_user1,US,customer,allow,allow,0.6416009999811649,
+us_user1,US,customer,allow,allow,0.6528729579877108,
+us_user1,US,customer,allow,allow,0.6374294578563422,
+us_user1,US,customer,allow,allow,0.6390669587999582,
+us_user1,US,customer,allow,allow,0.628422416979447,
+us_user1,US,customer,allow,allow,0.6262732499744743,
+us_user1,US,customer,allow,allow,0.6388985828962177,
+us_user1,US,customer,allow,allow,0.6205667080357671,
+us_user1,US,customer,allow,allow,0.6238839998841286,
+us_user1,US,customer,allow,allow,0.6489904168993235,
+us_user1,US,customer,allow,allow,0.679211167152971,
+gb_user1,GB,tpch,allow,allow,0.08689020783640444,
+gb_user1,GB,tpch,allow,allow,0.045066791819408536,
+gb_user1,GB,tpch,allow,allow,0.04601583303883672,
+gb_user1,GB,tpch,allow,allow,0.04682570789009333,
+gb_user1,GB,tpch,allow,allow,0.05380075005814433,
+gb_user1,GB,tpch,allow,allow,0.04266970790922642,
+gb_user1,GB,tpch,allow,allow,0.04080824996344745,
+gb_user1,GB,tpch,allow,allow,0.04314854205586016,
+gb_user1,GB,tpch,allow,allow,0.03947441605851054,
+gb_user1,GB,tpch,allow,allow,0.0415863748639822,
+gb_user1,GB,tpch,allow,allow,0.04106949991546571,
+gb_user1,GB,tpch,allow,allow,0.04395066597498953,
+gb_user1,GB,tpch,allow,allow,0.041914040921255946,
+gb_user1,GB,tpch,allow,allow,0.03313024993985891,
+gb_user1,GB,tpch,allow,allow,0.03415441606193781,
+gb_user1,GB,tpch,allow,allow,0.03354016598314047,
+gb_user1,GB,tpch,allow,allow,0.04063691687770188,
+gb_user1,GB,tpch,allow,allow,0.03860287484712899,
+gb_user1,GB,tpch,allow,allow,0.03753091604448855,
+gb_user1,GB,tpch,allow,allow,0.03979541617445648,
+gb_user1,GB,tpch,allow,allow,0.040827583987265825,
+gb_user1,GB,tpch,allow,allow,0.03666945802979171,
+gb_user1,GB,tpch,allow,allow,0.0411937499884516,
+gb_user1,GB,tpch,allow,allow,0.03628283296711743,
+gb_user1,GB,tpch,allow,allow,0.03482416598126292,
+gb_user1,GB,tpch,allow,allow,0.03760558390058577,
+gb_user1,GB,tpch,allow,allow,0.029896666994318366,
+gb_user1,GB,tpch,allow,allow,0.03208525013178587,
+gb_user1,GB,tpch,allow,allow,0.04078087490051985,
+gb_user1,GB,tpch,allow,allow,0.04283404094167054,
+gb_user1,GB,trades_raw,deny,deny,0.008144458057358861,"error 400: b'[""Request denied by identity-aware routing policy""]'"
+gb_user1,GB,trades_raw,deny,deny,0.006798458052799106,"error 400: b'[""Request denied by identity-aware routing policy""]'"
+gb_user1,GB,trades_raw,deny,deny,0.00789499981328845,"error 400: b'[""Request denied by identity-aware routing policy""]'"
+gb_user1,GB,trades_raw,deny,deny,0.008517334004864097,"error 400: b'[""Request denied by identity-aware routing policy""]'"
+gb_user1,GB,trades_raw,deny,deny,0.006813042098656297,"error 400: b'[""Request denied by identity-aware routing policy""]'"
+gb_user1,GB,trades_raw,deny,deny,0.006418541073799133,"error 400: b'[""Request denied by identity-aware routing policy""]'"
+gb_user1,GB,trades_raw,deny,deny,0.00680845882743597,"error 400: b'[""Request denied by identity-aware routing policy""]'"
+gb_user1,GB,trades_raw,deny,deny,0.01192504190839827,"error 400: b'[""Request denied by identity-aware routing policy""]'"
+gb_user1,GB,trades_raw,deny,deny,0.008241874864324927,"error 400: b'[""Request denied by identity-aware routing policy""]'"
+gb_user1,GB,trades_raw,deny,deny,0.006017416948452592,"error 400: b'[""Request denied by identity-aware routing policy""]'"
+gb_user1,GB,trades_raw,deny,deny,0.0059389169327914715,"error 400: b'[""Request denied by identity-aware routing policy""]'"
+gb_user1,GB,trades_raw,deny,deny,0.006604749942198396,"error 400: b'[""Request denied by identity-aware routing policy""]'"
+gb_user1,GB,trades_raw,deny,deny,0.006970416055992246,"error 400: b'[""Request denied by identity-aware routing policy""]'"
+gb_user1,GB,trades_raw,deny,deny,0.005229708040133119,"error 400: b'[""Request denied by identity-aware routing policy""]'"
+gb_user1,GB,trades_raw,deny,deny,0.0054491248447448015,"error 400: b'[""Request denied by identity-aware routing policy""]'"
+gb_user1,GB,trades_raw,deny,deny,0.0056785831693559885,"error 400: b'[""Request denied by identity-aware routing policy""]'"
+gb_user1,GB,trades_raw,deny,deny,0.008982667000964284,"error 400: b'[""Request denied by identity-aware routing policy""]'"
+gb_user1,GB,trades_raw,deny,deny,0.006956917000934482,"error 400: b'[""Request denied by identity-aware routing policy""]'"
+gb_user1,GB,trades_raw,deny,deny,0.0057457920629531145,"error 400: b'[""Request denied by identity-aware routing policy""]'"
+gb_user1,GB,trades_raw,deny,deny,0.007156834006309509,"error 400: b'[""Request denied by identity-aware routing policy""]'"
+gb_user1,GB,trades_raw,deny,deny,0.0066388328559696674,"error 400: b'[""Request denied by identity-aware routing policy""]'"
+gb_user1,GB,trades_raw,deny,deny,0.007041000062599778,"error 400: b'[""Request denied by identity-aware routing policy""]'"
+gb_user1,GB,trades_raw,deny,deny,0.007285499945282936,"error 400: b'[""Request denied by identity-aware routing policy""]'"
+gb_user1,GB,trades_raw,deny,deny,0.01009525009430945,"error 400: b'[""Request denied by identity-aware routing policy""]'"
+gb_user1,GB,trades_raw,deny,deny,0.0064988338854163885,"error 400: b'[""Request denied by identity-aware routing policy""]'"
+gb_user1,GB,trades_raw,deny,deny,0.008850999874994159,"error 400: b'[""Request denied by identity-aware routing policy""]'"
+gb_user1,GB,trades_raw,deny,deny,0.007782666943967342,"error 400: b'[""Request denied by identity-aware routing policy""]'"
+gb_user1,GB,trades_raw,deny,deny,0.008303874870762229,"error 400: b'[""Request denied by identity-aware routing policy""]'"
+gb_user1,GB,trades_raw,deny,deny,0.008061917033046484,"error 400: b'[""Request denied by identity-aware routing policy""]'"
+gb_user1,GB,trades_raw,deny,deny,0.0060385840479284525,"error 400: b'[""Request denied by identity-aware routing policy""]'"
+gb_user1,GB,customer,deny,deny,0.009772416902706027,"error 400: b'[""Request denied by identity-aware routing policy""]'"
+gb_user1,GB,customer,deny,deny,0.006615292048081756,"error 400: b'[""Request denied by identity-aware routing policy""]'"
+gb_user1,GB,customer,deny,deny,0.008288334123790264,"error 400: b'[""Request denied by identity-aware routing policy""]'"
+gb_user1,GB,customer,deny,deny,0.006807958008721471,"error 400: b'[""Request denied by identity-aware routing policy""]'"
+gb_user1,GB,customer,deny,deny,0.007641250034794211,"error 400: b'[""Request denied by identity-aware routing policy""]'"
+gb_user1,GB,customer,deny,deny,0.006379666971042752,"error 400: b'[""Request denied by identity-aware routing policy""]'"
+gb_user1,GB,customer,deny,deny,0.00618508318439126,"error 400: b'[""Request denied by identity-aware routing policy""]'"
+gb_user1,GB,customer,deny,deny,0.007945791119709611,"error 400: b'[""Request denied by identity-aware routing policy""]'"
+gb_user1,GB,customer,deny,deny,0.006627875147387385,"error 400: b'[""Request denied by identity-aware routing policy""]'"
+gb_user1,GB,customer,deny,deny,0.006656582932919264,"error 400: b'[""Request denied by identity-aware routing policy""]'"
+gb_user1,GB,customer,deny,deny,0.006942374864593148,"error 400: b'[""Request denied by identity-aware routing policy""]'"
+gb_user1,GB,customer,deny,deny,0.005632916931062937,"error 400: b'[""Request denied by identity-aware routing policy""]'"
+gb_user1,GB,customer,deny,deny,0.005241875071078539,"error 400: b'[""Request denied by identity-aware routing policy""]'"
+gb_user1,GB,customer,deny,deny,0.006940624909475446,"error 400: b'[""Request denied by identity-aware routing policy""]'"
+gb_user1,GB,customer,deny,deny,0.0059304169844836,"error 400: b'[""Request denied by identity-aware routing policy""]'"
+gb_user1,GB,customer,deny,deny,0.005449000047519803,"error 400: b'[""Request denied by identity-aware routing policy""]'"
+gb_user1,GB,customer,deny,deny,0.011216166894882917,"error 400: b'[""Request denied by identity-aware routing policy""]'"
+gb_user1,GB,customer,deny,deny,0.00627229199744761,"error 400: b'[""Request denied by identity-aware routing policy""]'"
+gb_user1,GB,customer,deny,deny,0.008227917132899165,"error 400: b'[""Request denied by identity-aware routing policy""]'"
+gb_user1,GB,customer,deny,deny,0.006471542175859213,"error 400: b'[""Request denied by identity-aware routing policy""]'"
+gb_user1,GB,customer,deny,deny,0.006839332869276404,"error 400: b'[""Request denied by identity-aware routing policy""]'"
+gb_user1,GB,customer,deny,deny,0.008061667205765843,"error 400: b'[""Request denied by identity-aware routing policy""]'"
+gb_user1,GB,customer,deny,deny,0.010999583872035146,"error 400: b'[""Request denied by identity-aware routing policy""]'"
+gb_user1,GB,customer,deny,deny,0.007251791888847947,"error 400: b'[""Request denied by identity-aware routing policy""]'"
+gb_user1,GB,customer,deny,deny,0.004935082979500294,"error 400: b'[""Request denied by identity-aware routing policy""]'"
+gb_user1,GB,customer,deny,deny,0.0053585420828312635,"error 400: b'[""Request denied by identity-aware routing policy""]'"
+gb_user1,GB,customer,deny,deny,0.005489083006978035,"error 400: b'[""Request denied by identity-aware routing policy""]'"
+gb_user1,GB,customer,deny,deny,0.0067096250131726265,"error 400: b'[""Request denied by identity-aware routing policy""]'"
+gb_user1,GB,customer,deny,deny,0.006136709125712514,"error 400: b'[""Request denied by identity-aware routing policy""]'"
+gb_user1,GB,customer,deny,deny,0.007549833972007036,"error 400: b'[""Request denied by identity-aware routing policy""]'"
+de_user1,DE,tpch,allow,allow,0.03551083314232528,
+de_user1,DE,tpch,allow,allow,0.03573849983513355,
+de_user1,DE,tpch,allow,allow,0.034053459065034986,
+de_user1,DE,tpch,allow,allow,0.04247437487356365,
+de_user1,DE,tpch,allow,allow,0.03884974983520806,
+de_user1,DE,tpch,allow,allow,0.037082083988934755,
+de_user1,DE,tpch,allow,allow,0.0555206669960171,
+de_user1,DE,tpch,allow,allow,0.04114608280360699,
+de_user1,DE,tpch,allow,allow,0.04565783403813839,
+de_user1,DE,tpch,allow,allow,0.03732237499207258,
+de_user1,DE,tpch,allow,allow,0.03588658291846514,
+de_user1,DE,tpch,allow,allow,0.03970075002871454,
+de_user1,DE,tpch,allow,allow,0.0360619998537004,
+de_user1,DE,tpch,allow,allow,0.03031945787370205,
+de_user1,DE,tpch,allow,allow,0.029940957901999354,
+de_user1,DE,tpch,allow,allow,0.0351243750192225,
+de_user1,DE,tpch,allow,allow,0.0369189172051847,
+de_user1,DE,tpch,allow,allow,0.04538962501101196,
+de_user1,DE,tpch,allow,allow,0.036078291945159435,
+de_user1,DE,tpch,allow,allow,0.04598791594617069,
+de_user1,DE,tpch,allow,allow,0.03879925003275275,
+de_user1,DE,tpch,allow,allow,0.03796837502159178,
+de_user1,DE,tpch,allow,allow,0.040718542179092765,
+de_user1,DE,tpch,allow,allow,0.042411417001858354,
+de_user1,DE,tpch,allow,allow,0.03960425010882318,
+de_user1,DE,tpch,allow,allow,0.04399362485855818,
+de_user1,DE,tpch,allow,allow,0.04128483310341835,
+de_user1,DE,tpch,allow,allow,0.0379229171667248,
+de_user1,DE,tpch,allow,allow,0.042991665890440345,
+de_user1,DE,tpch,allow,allow,0.043488417053595185,
+de_user1,DE,trades_raw,deny,deny,0.00989404204301536,"error 400: b'[""Request denied by identity-aware routing policy""]'"
+de_user1,DE,trades_raw,deny,deny,0.007733125006780028,"error 400: b'[""Request denied by identity-aware routing policy""]'"
+de_user1,DE,trades_raw,deny,deny,0.006609042175114155,"error 400: b'[""Request denied by identity-aware routing policy""]'"
+de_user1,DE,trades_raw,deny,deny,0.007431042147800326,"error 400: b'[""Request denied by identity-aware routing policy""]'"
+de_user1,DE,trades_raw,deny,deny,0.00878283311612904,"error 400: b'[""Request denied by identity-aware routing policy""]'"
+de_user1,DE,trades_raw,deny,deny,0.012099708896130323,"error 400: b'[""Request denied by identity-aware routing policy""]'"
+de_user1,DE,trades_raw,deny,deny,0.007096082903444767,"error 400: b'[""Request denied by identity-aware routing policy""]'"
+de_user1,DE,trades_raw,deny,deny,0.006090166978538036,"error 400: b'[""Request denied by identity-aware routing policy""]'"
+de_user1,DE,trades_raw,deny,deny,0.013757791835814714,"error 400: b'[""Request denied by identity-aware routing policy""]'"
+de_user1,DE,trades_raw,deny,deny,0.009571040980517864,"error 400: b'[""Request denied by identity-aware routing policy""]'"
+de_user1,DE,trades_raw,deny,deny,0.008356000063940883,"error 400: b'[""Request denied by identity-aware routing policy""]'"
+de_user1,DE,trades_raw,deny,deny,0.006741249933838844,"error 400: b'[""Request denied by identity-aware routing policy""]'"
+de_user1,DE,trades_raw,deny,deny,0.006234665866941214,"error 400: b'[""Request denied by identity-aware routing policy""]'"
+de_user1,DE,trades_raw,deny,deny,0.0049840419087558985,"error 400: b'[""Request denied by identity-aware routing policy""]'"
+de_user1,DE,trades_raw,deny,deny,0.005835500080138445,"error 400: b'[""Request denied by identity-aware routing policy""]'"
+de_user1,DE,trades_raw,deny,deny,0.00494024995714426,"error 400: b'[""Request denied by identity-aware routing policy""]'"
+de_user1,DE,trades_raw,deny,deny,0.0053331670351326466,"error 400: b'[""Request denied by identity-aware routing policy""]'"
+de_user1,DE,trades_raw,deny,deny,0.005681291921064258,"error 400: b'[""Request denied by identity-aware routing policy""]'"
+de_user1,DE,trades_raw,deny,deny,0.006904332898557186,"error 400: b'[""Request denied by identity-aware routing policy""]'"
+de_user1,DE,trades_raw,deny,deny,0.005210499977692962,"error 400: b'[""Request denied by identity-aware routing policy""]'"
+de_user1,DE,trades_raw,deny,deny,0.005877292016521096,"error 400: b'[""Request denied by identity-aware routing policy""]'"
+de_user1,DE,trades_raw,deny,deny,0.005129707977175713,"error 400: b'[""Request denied by identity-aware routing policy""]'"
+de_user1,DE,trades_raw,deny,deny,0.005659166956320405,"error 400: b'[""Request denied by identity-aware routing policy""]'"
+de_user1,DE,trades_raw,deny,deny,0.006746416911482811,"error 400: b'[""Request denied by identity-aware routing policy""]'"
+de_user1,DE,trades_raw,deny,deny,0.00506162503734231,"error 400: b'[""Request denied by identity-aware routing policy""]'"
+de_user1,DE,trades_raw,deny,deny,0.0052283331751823425,"error 400: b'[""Request denied by identity-aware routing policy""]'"
+de_user1,DE,trades_raw,deny,deny,0.0043927079532295465,"error 400: b'[""Request denied by identity-aware routing policy""]'"
+de_user1,DE,trades_raw,deny,deny,0.005772916134446859,"error 400: b'[""Request denied by identity-aware routing policy""]'"
+de_user1,DE,trades_raw,deny,deny,0.0074815829284489155,"error 400: b'[""Request denied by identity-aware routing policy""]'"
+de_user1,DE,trades_raw,deny,deny,0.00516587495803833,"error 400: b'[""Request denied by identity-aware routing policy""]'"
+de_user1,DE,customer,allow,allow,0.6605835410300642,
+de_user1,DE,customer,allow,allow,0.6324525000527501,
+de_user1,DE,customer,allow,allow,0.6452311670873314,
+de_user1,DE,customer,allow,allow,0.6671462918166071,
+de_user1,DE,customer,allow,allow,0.6402073330245912,
+de_user1,DE,customer,allow,allow,0.6507221669889987,
+de_user1,DE,customer,allow,allow,0.6387842919211835,
+de_user1,DE,customer,allow,allow,0.6575494159478694,
+de_user1,DE,customer,allow,allow,0.6339284998830408,
+de_user1,DE,customer,allow,allow,0.6657545000780374,
+de_user1,DE,customer,allow,allow,0.6542279161512852,
+de_user1,DE,customer,allow,allow,0.6455804998986423,
+de_user1,DE,customer,allow,allow,0.6477780409622937,
+de_user1,DE,customer,allow,allow,0.6433084579184651,
+de_user1,DE,customer,allow,allow,0.6314363749697804,
+de_user1,DE,customer,allow,allow,0.6237298750784248,
+de_user1,DE,customer,allow,allow,0.6031005000695586,
+de_user1,DE,customer,allow,allow,0.6463980830740184,
+de_user1,DE,customer,allow,allow,0.641176583012566,
+de_user1,DE,customer,allow,allow,0.6341945000458509,
+de_user1,DE,customer,allow,allow,0.6353139998391271,
+de_user1,DE,customer,allow,allow,0.6377012501470745,
+de_user1,DE,customer,allow,allow,0.643096667015925,
+de_user1,DE,customer,allow,allow,0.6440934999845922,
+de_user1,DE,customer,allow,allow,0.6334579170215875,
+de_user1,DE,customer,allow,allow,0.6745035410858691,
+de_user1,DE,customer,allow,allow,0.6288527501747012,
+de_user1,DE,customer,allow,allow,0.6244682499673218,
+de_user1,DE,customer,allow,allow,0.6249486659653485,
+de_user1,DE,customer,allow,allow,0.6318324168678373,
+in_user1,IN,tpch,allow,allow,0.05169437499716878,
+in_user1,IN,tpch,allow,allow,0.037916624918580055,
+in_user1,IN,tpch,allow,allow,0.03312324988655746,
+in_user1,IN,tpch,allow,allow,0.030291332863271236,
+in_user1,IN,tpch,allow,allow,0.030472875107079744,
+in_user1,IN,tpch,allow,allow,0.03413245896808803,
+in_user1,IN,tpch,allow,allow,0.033436707919463515,
+in_user1,IN,tpch,allow,allow,0.032085999846458435,
+in_user1,IN,tpch,allow,allow,0.03129483317025006,
+in_user1,IN,tpch,allow,allow,0.030405291123315692,
+in_user1,IN,tpch,allow,allow,0.035152167081832886,
+in_user1,IN,tpch,allow,allow,0.030366500141099095,
+in_user1,IN,tpch,allow,allow,0.031454750103875995,
+in_user1,IN,tpch,allow,allow,0.030798708088696003,
+in_user1,IN,tpch,allow,allow,0.03344520810060203,
+in_user1,IN,tpch,allow,allow,0.027775458991527557,
+in_user1,IN,tpch,allow,allow,0.03352554212324321,
+in_user1,IN,tpch,allow,allow,0.032503625145182014,
+in_user1,IN,tpch,allow,allow,0.033327334094792604,
+in_user1,IN,tpch,allow,allow,0.030866833869367838,
+in_user1,IN,tpch,allow,allow,0.031337833032011986,
+in_user1,IN,tpch,allow,allow,0.03330345801077783,
+in_user1,IN,tpch,allow,allow,0.03267112490721047,
+in_user1,IN,tpch,allow,allow,0.032922707963734865,
+in_user1,IN,tpch,allow,allow,0.032802625093609095,
+in_user1,IN,tpch,allow,allow,0.035491166869178414,
+in_user1,IN,tpch,allow,allow,0.030060000019147992,
+in_user1,IN,tpch,allow,allow,0.030812582932412624,
+in_user1,IN,tpch,allow,allow,0.033799791941419244,
+in_user1,IN,tpch,allow,allow,0.03788004186935723,
+in_user1,IN,trades_raw,deny,deny,0.005778541089966893,"error 400: b'[""Request denied by identity-aware routing policy""]'"
+in_user1,IN,trades_raw,deny,deny,0.005265667103230953,"error 400: b'[""Request denied by identity-aware routing policy""]'"
+in_user1,IN,trades_raw,deny,deny,0.0050775830168277025,"error 400: b'[""Request denied by identity-aware routing policy""]'"
+in_user1,IN,trades_raw,deny,deny,0.005372124956920743,"error 400: b'[""Request denied by identity-aware routing policy""]'"
+in_user1,IN,trades_raw,deny,deny,0.007703084032982588,"error 400: b'[""Request denied by identity-aware routing policy""]'"
+in_user1,IN,trades_raw,deny,deny,0.00403020903468132,"error 400: b'[""Request denied by identity-aware routing policy""]'"
+in_user1,IN,trades_raw,deny,deny,0.004351624986156821,"error 400: b'[""Request denied by identity-aware routing policy""]'"
+in_user1,IN,trades_raw,deny,deny,0.006715958938002586,"error 400: b'[""Request denied by identity-aware routing policy""]'"
+in_user1,IN,trades_raw,deny,deny,0.006167624844238162,"error 400: b'[""Request denied by identity-aware routing policy""]'"
+in_user1,IN,trades_raw,deny,deny,0.005087958881631494,"error 400: b'[""Request denied by identity-aware routing policy""]'"
+in_user1,IN,trades_raw,deny,deny,0.00681333290413022,"error 400: b'[""Request denied by identity-aware routing policy""]'"
+in_user1,IN,trades_raw,deny,deny,0.0058473339304327965,"error 400: b'[""Request denied by identity-aware routing policy""]'"
+in_user1,IN,trades_raw,deny,deny,0.006152499932795763,"error 400: b'[""Request denied by identity-aware routing policy""]'"
+in_user1,IN,trades_raw,deny,deny,0.005256457952782512,"error 400: b'[""Request denied by identity-aware routing policy""]'"
+in_user1,IN,trades_raw,deny,deny,0.005877207964658737,"error 400: b'[""Request denied by identity-aware routing policy""]'"
+in_user1,IN,trades_raw,deny,deny,0.005040124990046024,"error 400: b'[""Request denied by identity-aware routing policy""]'"
+in_user1,IN,trades_raw,deny,deny,0.005366083001717925,"error 400: b'[""Request denied by identity-aware routing policy""]'"
+in_user1,IN,trades_raw,deny,deny,0.008729249937459826,"error 400: b'[""Request denied by identity-aware routing policy""]'"
+in_user1,IN,trades_raw,deny,deny,0.0062986251432448626,"error 400: b'[""Request denied by identity-aware routing policy""]'"
+in_user1,IN,trades_raw,deny,deny,0.004209208069369197,"error 400: b'[""Request denied by identity-aware routing policy""]'"
+in_user1,IN,trades_raw,deny,deny,0.004306957824155688,"error 400: b'[""Request denied by identity-aware routing policy""]'"
+in_user1,IN,trades_raw,deny,deny,0.005252874922007322,"error 400: b'[""Request denied by identity-aware routing policy""]'"
+in_user1,IN,trades_raw,deny,deny,0.004684166982769966,"error 400: b'[""Request denied by identity-aware routing policy""]'"
+in_user1,IN,trades_raw,deny,deny,0.004967042012140155,"error 400: b'[""Request denied by identity-aware routing policy""]'"
+in_user1,IN,trades_raw,deny,deny,0.004425375023856759,"error 400: b'[""Request denied by identity-aware routing policy""]'"
+in_user1,IN,trades_raw,deny,deny,0.0062657909002155066,"error 400: b'[""Request denied by identity-aware routing policy""]'"
+in_user1,IN,trades_raw,deny,deny,0.005659000016748905,"error 400: b'[""Request denied by identity-aware routing policy""]'"
+in_user1,IN,trades_raw,deny,deny,0.005315166898071766,"error 400: b'[""Request denied by identity-aware routing policy""]'"
+in_user1,IN,trades_raw,deny,deny,0.004374959040433168,"error 400: b'[""Request denied by identity-aware routing policy""]'"
+in_user1,IN,trades_raw,deny,deny,0.004151500063017011,"error 400: b'[""Request denied by identity-aware routing policy""]'"
+in_user1,IN,customer,deny,deny,0.005580290919169784,"error 400: b'[""Request denied by identity-aware routing policy""]'"
+in_user1,IN,customer,deny,deny,0.006026917137205601,"error 400: b'[""Request denied by identity-aware routing policy""]'"
+in_user1,IN,customer,deny,deny,0.00554525014013052,"error 400: b'[""Request denied by identity-aware routing policy""]'"
+in_user1,IN,customer,deny,deny,0.004700749879702926,"error 400: b'[""Request denied by identity-aware routing policy""]'"
+in_user1,IN,customer,deny,deny,0.00785829103551805,"error 400: b'[""Request denied by identity-aware routing policy""]'"
+in_user1,IN,customer,deny,deny,0.0057573330122977495,"error 400: b'[""Request denied by identity-aware routing policy""]'"
+in_user1,IN,customer,deny,deny,0.005838375072926283,"error 400: b'[""Request denied by identity-aware routing policy""]'"
+in_user1,IN,customer,deny,deny,0.005428166128695011,"error 400: b'[""Request denied by identity-aware routing policy""]'"
+in_user1,IN,customer,deny,deny,0.0050444582011550665,"error 400: b'[""Request denied by identity-aware routing policy""]'"
+in_user1,IN,customer,deny,deny,0.0071407500654459,"error 400: b'[""Request denied by identity-aware routing policy""]'"
+in_user1,IN,customer,deny,deny,0.0060931670013815165,"error 400: b'[""Request denied by identity-aware routing policy""]'"
+in_user1,IN,customer,deny,deny,0.005755499936640263,"error 400: b'[""Request denied by identity-aware routing policy""]'"
+in_user1,IN,customer,deny,deny,0.004133374895900488,"error 400: b'[""Request denied by identity-aware routing policy""]'"
+in_user1,IN,customer,deny,deny,0.006625709123909473,"error 400: b'[""Request denied by identity-aware routing policy""]'"
+in_user1,IN,customer,deny,deny,0.003993333084508777,"error 400: b'[""Request denied by identity-aware routing policy""]'"
+in_user1,IN,customer,deny,deny,0.004046041984111071,"error 400: b'[""Request denied by identity-aware routing policy""]'"
+in_user1,IN,customer,deny,deny,0.004778209142386913,"error 400: b'[""Request denied by identity-aware routing policy""]'"
+in_user1,IN,customer,deny,deny,0.0042032909113913774,"error 400: b'[""Request denied by identity-aware routing policy""]'"
+in_user1,IN,customer,deny,deny,0.004518457921221852,"error 400: b'[""Request denied by identity-aware routing policy""]'"
+in_user1,IN,customer,deny,deny,0.004092042101547122,"error 400: b'[""Request denied by identity-aware routing policy""]'"
+in_user1,IN,customer,deny,deny,0.005410041194409132,"error 400: b'[""Request denied by identity-aware routing policy""]'"
+in_user1,IN,customer,deny,deny,0.005628041923046112,"error 400: b'[""Request denied by identity-aware routing policy""]'"
+in_user1,IN,customer,deny,deny,0.006013416917994618,"error 400: b'[""Request denied by identity-aware routing policy""]'"
+in_user1,IN,customer,deny,deny,0.00810666591860354,"error 400: b'[""Request denied by identity-aware routing policy""]'"
+in_user1,IN,customer,deny,deny,0.004680708982050419,"error 400: b'[""Request denied by identity-aware routing policy""]'"
+in_user1,IN,customer,deny,deny,0.00493545806966722,"error 400: b'[""Request denied by identity-aware routing policy""]'"
+in_user1,IN,customer,deny,deny,0.004781083203852177,"error 400: b'[""Request denied by identity-aware routing policy""]'"
+in_user1,IN,customer,deny,deny,0.005177750019356608,"error 400: b'[""Request denied by identity-aware routing policy""]'"
+in_user1,IN,customer,deny,deny,0.0053439580369740725,"error 400: b'[""Request denied by identity-aware routing policy""]'"
+in_user1,IN,customer,deny,deny,0.005414583021774888,"error 400: b'[""Request denied by identity-aware routing policy""]'"
