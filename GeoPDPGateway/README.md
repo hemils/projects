@@ -1,6 +1,6 @@
 # GeoPDPGateway
 
-GeoPDPGateway is a proof of concept for identity-aware SQL routing with Trino
+GeoPDPGateway is a proof of concept for user location-aware SQL routing with Trino
 Gateway. A FastAPI selector validates an OIDC access token, asks the policy
 decision point (PDP) to evaluate the request's catalog and supplied country,
 then returns a Gateway routing group or a denial. The selector chooses a
@@ -11,11 +11,8 @@ two Trino clusters, sample data, and experiments covering policy outcomes and
 request latency.
 
 > **POC security and residency note:** the country value is supplied by the
-> client and is spoofable. Routing groups and separate local clusters do not
-> establish a user's physical location or prove data residency. Trino-side
-> authentication, TLS, authorization, trusted location signals, and protected
-> coordinator access are required for a production system. See
-> [POC limitations](POC_LIMITATIONS.md).
+> client and is spoofable. This is beacause user belongs a single location. But solution will work from any location if the cluster is accessible. See
+> [POC limitations](POC_LIMITATIONS.md) for more details.
 
 ## Documentation
 
